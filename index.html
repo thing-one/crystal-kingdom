@@ -171,13 +171,13 @@ button {
 .screen-title {
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  gap: 18px;
   text-align: center;
   padding: 24px;
 }
 .title-gem {
-  font-size: 84px;
-  line-height: 1;
+  width: 84px;
+  height: 78px;
   filter: drop-shadow(0 0 24px rgba(126, 240, 226, 0.65));
   animation: cck-bob 2.6s ease-in-out infinite;
 }
@@ -300,6 +300,66 @@ button {
   border-top: 1px solid var(--glass-edge);
   padding-top: 8px;
   text-align: left;
+}
+
+/* title screen life: faceted gem svg, Charlie, bobbing friends, twinkles */
+.title-gem svg { width: 100%; height: 100%; display: block; }
+.title-avatar { width: 120px; height: 160px; }
+.title-avatar svg { width: 100%; height: 100%; }
+.title-star {
+  position: absolute;
+  color: var(--gold-soft);
+  font-size: 20px;
+  opacity: 0.6;
+  animation: cck-twinkle 2.6s ease-in-out infinite;
+  pointer-events: none;
+}
+.title-friends {
+  display: flex;
+  gap: 22px;
+  font-size: 42px;
+  line-height: 1;
+}
+.title-friend { display: inline-block; animation: cck-bob 2.4s ease-in-out infinite; }
+
+/* golem arc: cracks + moods are pure opacity states */
+.g-crack { opacity: 0; transition: opacity 0.4s ease; }
+.golem[data-hurt='1'] .c1 { opacity: 0.75; }
+.golem[data-hurt='2'] .c1, .golem[data-hurt='2'] .c2 { opacity: 0.75; }
+.golem[data-hurt='3'] .c1, .golem[data-hurt='3'] .c2, .golem[data-hurt='3'] .c3 { opacity: 0.8; }
+.g-face { opacity: 0; transition: opacity 0.35s ease; }
+.golem[data-mood='grumpy'] .g-grumpy { opacity: 1; }
+.golem[data-mood='worried'] .g-worried { opacity: 1; }
+.golem[data-mood='freed'] .g-freed { opacity: 1; }
+.golem[data-mood='freed'] .g-crack { opacity: 0.25; }
+
+/* boss header: the land chip never wraps under the long lighthouse name */
+.ch-land-chip {
+  white-space: nowrap;
+  max-width: 30vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* shooting stars + companion peeks on the living map */
+.wm-shoot { animation: cck-shoot 14s linear infinite; }
+@keyframes cck-shoot {
+  0%    { transform: translate(880px, 36px); opacity: 0; }
+  1.5%  { opacity: 0.9; }
+  6%    { transform: translate(560px, 132px); opacity: 0; }
+  100%  { transform: translate(560px, 132px); opacity: 0; }
+}
+.wm-peeker {
+  animation: cck-peek 2.6s ease both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes cck-peek {
+  0%   { transform: translateY(26px); opacity: 0; }
+  20%  { transform: translateY(0); opacity: 1; }
+  50%  { transform: translateY(-6px) rotate(8deg); }
+  80%  { transform: translateY(0) rotate(-6deg); opacity: 1; }
+  100% { transform: translateY(26px); opacity: 0; }
 }
 
 /* balloon dock on the map */
@@ -1036,6 +1096,7 @@ button {
   .cheer.cheer-bounce, .cheer.cheer-peek,
   .friend-emoji.friend-pop, .wm-land.wm-justfreed .wm-float,
   .screen-celebrate.cele-bump, .tv-cloud, .tv-balloon,
+  .title-star, .title-friend, .wm-peeker,
   .wm-cloud, .wm-skystar, .wm-aurora, .wm-path, .wm-balloon .wm-float,
   .wm-land .wm-float, .wm-tree, .wm-wave, .wm-snow, .wm-facet, .wm-halo,
   .wm-land[data-state='done'] .wm-doneglow, .wm-land.wm-next .wm-ring,
@@ -1045,6 +1106,7 @@ button {
   }
   .travel-overlay::before { animation: none; opacity: 1; }
   .wm-land, .wm-balloon { transition: none; }
+  .wm-shoot { animation: none; opacity: 0; }
   .av-rig.av-idle { animation: none; }
   .av-rig.av-cartwheel, .av-rig.av-flip, .av-rig.av-stuck {
     animation: cck-gentle-bounce 0.7s ease both;
@@ -4052,7 +4114,30 @@ const WorldMap = (() => {
     return s + '</g>';
   }
 
-  function landGroup(land, isNext) {
+  // Mini Charlie in her current leotard, standing on the next island —
+  // simplified rig (no arms), riding the island's float bob.
+  function miniCharlie(L, big) {
+    const tx = big ? 86 : 54;
+    const ty = big ? -16 : -12;
+    return (
+      '<g class="wm-mini" transform="translate(' + tx + ' ' + ty + ') scale(0.55)" aria-hidden="true">' +
+      '<ellipse cx="0" cy="62" rx="26" ry="8" fill="#ffd166" opacity="0.35"/>' +
+      '<path d="M14 -34 Q30 -30 28 -12 Q26 2 18 6 Q22 -12 14 -22 Z" fill="#6b4226"/>' +
+      '<circle cx="0" cy="-26" r="14" fill="#f2c39b"/>' +
+      '<path d="M-14 -28 Q-13 -42 0 -42 Q13 -42 14 -28 Q7 -36 0 -36 Q-7 -36 -14 -28 Z" fill="#7a4a2b"/>' +
+      '<circle cx="-5" cy="-26" r="2" fill="#33254f"/><circle cx="5" cy="-26" r="2" fill="#33254f"/>' +
+      '<path d="M-4 -19 Q0 -15 4 -19" fill="none" stroke="#b3604a" stroke-width="2" stroke-linecap="round"/>' +
+      '<path d="M-11 -10 Q0 -15 11 -10 L14 18 Q0 26 -14 18 Z" fill="' + L.top + '"/>' +
+      '<path d="M-12.5 4 Q0 0 12.7 4 L14 18 Q0 26 -14 18 Z" fill="' + L.low + '" opacity="0.95"/>' +
+      '<path d="M-6 22 L-9 54" stroke="#f2c39b" stroke-width="7" stroke-linecap="round"/>' +
+      '<path d="M6 22 L9 54" stroke="#f2c39b" stroke-width="7" stroke-linecap="round"/>' +
+      '<ellipse cx="-9" cy="58" rx="6" ry="3.4" fill="' + L.slip + '"/>' +
+      '<ellipse cx="9" cy="58" rx="6" ry="3.4" fill="' + L.slip + '"/>' +
+      '</g>'
+    );
+  }
+
+  function landGroup(land, isNext, look) {
     const spot = SPOTS[land.id];
     if (!spot) return '';
     const state = land.stars > 0 ? 'done' : land.unlocked ? 'open' : 'locked';
@@ -4066,6 +4151,8 @@ const WorldMap = (() => {
       (state === 'done' ? '<ellipse class="wm-doneglow" cx="0" cy="-16" rx="' + (big ? 112 : 92) + '" ry="' + (big ? 80 : 66) + '" fill="#ffd166" opacity="0.4"/>' : '') +
       '<g class="wm-float">' + decor +
       (state === 'locked' ? lockIcon() : '') +
+      (isNext && look ? miniCharlie(look, big) : '') +
+      '<g class="wm-peek" data-peek="' + land.id + '"></g>' +
       (land.stars === 3
         ? '<g class="wm-crown" transform="translate(0 ' + (big ? -152 : -106) + ')">' +
           '<path d="M-13 7 L-13 -4 L-6.5 2 L0 -9 L6.5 2 L13 -4 L13 7 Z" fill="#ffd166" stroke="#fff3c4" stroke-width="1.5"/>' +
@@ -4082,9 +4169,12 @@ const WorldMap = (() => {
     );
   }
 
-  function skyBits() {
+  function skyBits(world) {
+    const w2 = world === 2;
     let s = '';
-    const seeds = [37, 91, 153, 222, 318, 411, 489, 566, 648, 731, 808, 877, 944, 263, 692];
+    let seeds = [37, 91, 153, 222, 318, 411, 489, 566, 648, 731, 808, 877, 944, 263, 692];
+    // the Starlight Kingdom earns a denser star field and a crescent moon
+    if (w2) seeds = seeds.concat([124, 199, 354, 472, 601, 769, 851, 918]);
     for (let i = 0; i < seeds.length; i++) {
       const x = seeds[i];
       const y = 24 + ((x * 7919) % 230);
@@ -4092,8 +4182,21 @@ const WorldMap = (() => {
       s += '<circle class="wm-skystar" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) +
         '" fill="#f7f5ff" style="animation-delay:' + (-(x % 24) / 10) + 's"/>';
     }
-    s += '<path class="wm-aurora" d="M-20 120 Q180 40 420 96 Q700 160 1020 70 L1020 10 Q660 96 380 44 Q160 4 -20 60 Z" fill="#7ef0e2" opacity="0.35"/>';
-    s += '<path class="wm-aurora" style="animation-delay:-4.5s" d="M-20 170 Q240 90 520 140 Q780 186 1020 120 L1020 86 Q760 150 520 108 Q260 64 -20 130 Z" fill="#c4b5fd" opacity="0.3"/>';
+    if (w2) {
+      s += '<path d="M150 56 A32 32 0 1 0 150 120 A25 25 0 1 1 150 56 Z" fill="#fff3c4" opacity="0.9"/>';
+    }
+    const auroraA = w2 ? '#ffd166' : '#7ef0e2';
+    const auroraB = w2 ? '#f0abfc' : '#c4b5fd';
+    s += '<path class="wm-aurora" d="M-20 120 Q180 40 420 96 Q700 160 1020 70 L1020 10 Q660 96 380 44 Q160 4 -20 60 Z" fill="' + auroraA + '" opacity="0.35"/>';
+    s += '<path class="wm-aurora" style="animation-delay:-4.5s" d="M-20 170 Q240 90 520 140 Q780 186 1020 120 L1020 86 Q760 150 520 108 Q260 64 -20 130 Z" fill="' + auroraB + '" opacity="0.3"/>';
+    // a shooting star streaks by every ~14s (world 2 gets a second, offset)
+    const shoot = (delay) =>
+      '<g class="wm-shoot" style="animation-delay:' + delay + 's">' +
+      '<line x1="0" y1="0" x2="52" y2="16" stroke="#f7f5ff" stroke-width="3" stroke-linecap="round" opacity="0.9"/>' +
+      '<circle cx="0" cy="0" r="3.2" fill="#f7f5ff"/>' +
+      '</g>';
+    s += shoot(0);
+    if (w2) s += shoot(-7);
     const cloud = (cls, y, sc) =>
       '<g class="wm-cloud ' + cls + '" opacity="0.5" transform="translate(0 ' + y + ') scale(' + sc + ')">' +
       '<ellipse cx="0" cy="0" rx="46" ry="16" fill="#f7f5ff" opacity="0.5"/>' +
@@ -4135,10 +4238,10 @@ const WorldMap = (() => {
       'linear-gradient(180deg, ' + sky[0] + ' 0%, ' + sky[1] + ' 52%, ' + sky[2] + ' 100%)';
 
     let svg = '<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-label="Kingdom map">';
-    svg += skyBits();
+    svg += skyBits(view.world);
     svg += windingPath(view.world === 2 ? W2_ORDER : W1_ORDER, view.lands);
     for (const land of view.lands) {
-      svg += landGroup(land, view.highlight === land.id);
+      svg += landGroup(land, view.highlight === land.id, view.look);
     }
     if (view.travel) svg += balloonGroup();
     svg += '</svg>';
@@ -4302,14 +4405,44 @@ const Screens = (() => {
   }
 
   // ---------- title ----------
-  function title(el) {
+  // A real faceted crystal (no emoji), Charlie in her current leotard, and
+  // her hatched friends bobbing along the bottom. opts: { friends: [emoji] }
+  function titleGemSvg() {
+    return (
+      '<svg viewBox="0 0 100 92" aria-hidden="true">' +
+      '<polygon points="50,4 88,34 50,88 12,34" fill="#7ef0e2"/>' +
+      '<polygon points="50,4 88,34 50,34" fill="#b9f5ee"/>' +
+      '<polygon points="50,4 12,34 50,34" fill="#a78bfa" opacity="0.9"/>' +
+      '<polygon points="12,34 50,88 50,34" fill="#5eead4"/>' +
+      '<polygon points="88,34 50,88 50,34" fill="#2dd4bf"/>' +
+      '<path class="wm-facet" d="M50 4 L64 34 L50 52 Z" fill="#f4f1ff" opacity="0.6"/>' +
+      '<path class="wm-facet f2" d="M50 52 L36 34 L50 88 Z" fill="#ffffff" opacity="0.3"/>' +
+      '</svg>'
+    );
+  }
+
+  function title(el, opts) {
+    const o = opts || {};
+    let stars = '';
+    const seeds = [8, 22, 37, 58, 74, 90];
+    for (let i = 0; i < seeds.length; i++) {
+      stars += '<span class="title-star" style="left:' + seeds[i] + '%;top:' + (6 + ((seeds[i] * 7) % 26)) +
+        '%;animation-delay:' + (-(seeds[i] % 24) / 10) + 's">✦</span>';
+    }
+    let friends = '';
+    (o.friends || []).slice(0, 5).forEach((em, i) => {
+      friends += '<span class="title-friend" style="animation-delay:' + (-i * 0.45) + 's">' + esc(em) + '</span>';
+    });
     el.innerHTML =
       '<section class="screen screen-title">' +
-      '<div class="title-gem">💎</div>' +
+      stars +
+      '<div class="title-gem">' + titleGemSvg() + '</div>' +
       '<h1 class="game-title"><span><span class="title-spark">✦</span> Charlie&#39;s <span class="title-spark">✦</span></span>' +
       '<span class="grad">Crystal Kingdom</span></h1>' +
       '<p class="title-sub">A tumbling quest through two floating kingdoms</p>' +
+      '<div class="title-avatar" data-avatar></div>' +
       '<button class="btn btn-play" data-action="play" data-press>Play</button>' +
+      (friends ? '<div class="title-friends" aria-hidden="true">' + friends + '</div>' : '') +
       '</section>';
   }
 
@@ -4335,6 +4468,9 @@ const Screens = (() => {
 
   // ---------- challenge ----------
   function dotsHtml(cur, ctx) {
+    // Boss phase: the golem's shell is the single progress read — a second
+    // dot row that resets her earned challenge dots only competes with it.
+    if (cur.phase === 'boss') return '<div class="dots" aria-hidden="true"></div>';
     // Render the dot row from ORIGINAL challenge counts so a requeued item
     // never grows the row (the finish line must never move away after a miss)
     // and the egg markers stay pinned to original challenges 3 and 6.
@@ -4356,6 +4492,9 @@ const Screens = (() => {
     return s + '</div>';
   }
 
+  // The golem has an arc: grumpy -> shell cracks appear -> worried -> the
+  // final boss item resolves and the spell breaks into a smile. Cracks and
+  // faces are pure opacity states driven by data-hurt / data-mood (CSS).
   function golemSvg() {
     return (
       '<svg viewBox="0 0 100 100" aria-label="Crystal golem">' +
@@ -4367,14 +4506,41 @@ const Screens = (() => {
       '<path d="M86 56 L74 44 L68 58 L78 66 Z" fill="#b9a7ff"/>' +
       '<path d="M30 50 L40 46 L38 56 Z" fill="#7ef0e2" opacity="0.85"/>' +
       '<path d="M70 50 L60 46 L62 56 Z" fill="#7ef0e2" opacity="0.85"/>' +
-      // grumpy brows + eyes + frown
-      '<path d="M34 56 L46 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
-      '<path d="M66 56 L54 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
+      // shell cracks, revealed as the gauntlet lands hits
+      '<g class="g-cracks">' +
+      '<path class="g-crack c1" d="M30 46 L36 54 L32 62" fill="none" stroke="#33254f" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<path class="g-crack c2" d="M72 48 L66 58 L70 68 L64 76" fill="none" stroke="#33254f" stroke-width="2.2" stroke-linecap="round"/>' +
+      '<path class="g-crack c3" d="M50 34 L47 44 L53 52 L49 60" fill="none" stroke="#33254f" stroke-width="2.4" stroke-linecap="round"/>' +
+      '</g>' +
+      // shared eyes
       '<circle cx="41" cy="66" r="3.4" fill="#241f52"/>' +
       '<circle cx="59" cy="66" r="3.4" fill="#241f52"/>' +
+      // grumpy (default)
+      '<g class="g-face g-grumpy">' +
+      '<path d="M34 56 L46 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
+      '<path d="M66 56 L54 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
       '<path d="M42 78 Q50 73 58 78" fill="none" stroke="#241f52" stroke-width="3.6" stroke-linecap="round"/>' +
+      '</g>' +
+      // worried (shell nearly gone)
+      '<g class="g-face g-worried">' +
+      '<path d="M35 57 Q40 54 46 57" stroke="#241f52" stroke-width="3.6" stroke-linecap="round" fill="none"/>' +
+      '<path d="M65 57 Q60 54 54 57" stroke="#241f52" stroke-width="3.6" stroke-linecap="round" fill="none"/>' +
+      '<path d="M44 78 Q50 76 56 78" fill="none" stroke="#241f52" stroke-width="3.4" stroke-linecap="round"/>' +
+      '</g>' +
+      // freed (the spell breaks)
+      '<g class="g-face g-freed">' +
+      '<path d="M35 55 Q40 52 46 55" stroke="#241f52" stroke-width="3.4" stroke-linecap="round" fill="none"/>' +
+      '<path d="M65 55 Q60 52 54 55" stroke="#241f52" stroke-width="3.4" stroke-linecap="round" fill="none"/>' +
+      '<path d="M40 75 Q50 84 60 75" fill="none" stroke="#241f52" stroke-width="3.8" stroke-linecap="round"/>' +
+      '<circle cx="33" cy="72" r="3.4" fill="#ff8e7a" opacity="0.6"/>' +
+      '<circle cx="67" cy="72" r="3.4" fill="#ff8e7a" opacity="0.6"/>' +
+      '</g>' +
       '</g></svg>'
     );
+  }
+
+  function golemHurt(hits, total) {
+    return Math.max(0, Math.min(3, Math.ceil((hits / Math.max(1, total)) * 3)));
   }
 
   function bossBarHtml(cur, ctx) {
@@ -4382,9 +4548,11 @@ const Screens = (() => {
     for (let i = 0; i < cur.bossTotal; i++) {
       segs += '<div class="shell-seg' + (i < ctx.bossHits ? ' cracked' : '') + '" data-seg="' + i + '"></div>';
     }
+    const hurt = golemHurt(ctx.bossHits, cur.bossTotal);
+    const mood = hurt >= 2 ? 'worried' : 'grumpy';
     return (
       '<div class="boss-bar">' +
-      '<div class="golem" data-golem>' + golemSvg() + '</div>' +
+      '<div class="golem" data-golem data-hurt="' + hurt + '" data-mood="' + mood + '">' + golemSvg() + '</div>' +
       '<div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">' +
       '<div class="boss-name">' + esc(ctx.bossName || 'The Crystal Golem') + '</div>' +
       '<div class="shell" data-shell>' + segs + '</div>' +
@@ -4533,6 +4701,13 @@ const Screens = (() => {
     const segs = root.querySelectorAll('.shell-seg');
     for (let i = 0; i < segs.length; i++) {
       segs[i].classList.toggle('cracked', i < hits);
+    }
+    // the golem's body and mood track the shell live
+    const g = root.querySelector('[data-golem]');
+    if (g && g.getAttribute('data-mood') !== 'freed') {
+      const hurt = golemHurt(hits, segs.length);
+      g.setAttribute('data-hurt', hurt);
+      g.setAttribute('data-mood', hurt >= 2 ? 'worried' : 'grumpy');
     }
   }
 
@@ -4749,6 +4924,8 @@ const Main = (() => {
   let launching = false;     // one-shot lock during the island launch beat
   let preUnlocked = null;    // unlock snapshot before a run (homecoming pop)
   let starPartyLand = '';    // land that JUST earned its first third star
+  let preWorldDone = false;  // was the current world fully starred before this run?
+  let paradeWorld = 0;       // world whose friends parade on the next map (0 = none)
 
   // Wardrobe: leotards unlock by shining 3 stars on lands.
   const LOOK_ORDER = ['crystal', 'sunset', 'meadow', 'midnight', 'gold'];
@@ -4822,6 +4999,23 @@ const Main = (() => {
     el.classList.remove('cheer-bounce', 'cheer-peek');
     void el.getBoundingClientRect();
     el.classList.add(cls);
+  }
+
+  // The final boss item just resolved (correct OR reveal — blocks advance the
+  // gauntlet too): the spell breaks and the golem smiles.
+  function golemFreed() {
+    const g = app.querySelector('[data-golem]');
+    if (g) g.setAttribute('data-mood', 'freed');
+    AudioKit.play('hatch');
+    try { Juice.toast('He was under a spell. Free at last!', 3000); } catch (e) { /* toast only */ }
+    if (!reduced() && g) {
+      const c = centerOf(g);
+      Particles.burst('hatch', c.x, c.y);
+    }
+  }
+
+  function isBossFinale() {
+    return !!(curView && curView.phase === 'boss' && curView.index >= curView.bossTotal);
   }
 
   // A tapped letter tile flies into its slot (clone -> fixed-position
@@ -5026,7 +5220,10 @@ const Main = (() => {
     clearTimers();
     screen = 'title';
     app.removeAttribute('data-land');
-    Screens.title(app);
+    const hatched = new Set(game.state.companions);
+    const friends = Companions.list.filter((c) => hatched.has(c.id)).slice(0, 5).map((c) => c.emoji);
+    Screens.title(app, { friends });
+    Avatar.mount(app.querySelector('.title-avatar'), look());
   }
 
   // Balloon flight between kingdoms. Uses raw setTimeout deliberately:
@@ -5079,10 +5276,22 @@ const Main = (() => {
     const hl = highlight === undefined ? nextLandHighlight(order) : highlight;
     WorldMap.render(
       container,
-      { lands, completedCount, highlight: hl, world, travel: world === 2 || world2Open },
+      {
+        lands,
+        completedCount,
+        highlight: hl,
+        world,
+        travel: world === 2 || world2Open,
+        look: Avatar.LOOKS[look()] || Avatar.LOOKS.crystal,
+      },
       startLand,
       () => travelTo(world === 1 ? 2 : 1)
     );
+    schedulePeek();
+    if (paradeWorld === world) {
+      paradeWorld = 0;
+      runParade(order);
+    }
     // homecoming: pop the land this run just unlocked, with a chime
     if (preUnlocked) {
       const snap = preUnlocked;
@@ -5121,6 +5330,59 @@ const Main = (() => {
       newWorldToast = true;
       try { Juice.toast('🌠 A new kingdom appears in the stars!', 3500); } catch (e) { /* toast only */ }
     }
+  }
+
+  // ---------------- living map: companion peeks + the friends parade ----------
+  // Peeks pop a hatched friend's emoji out of its island now and then. The
+  // timer pool is wiped on any navigation, so peeks can never leak into a
+  // challenge. Each land has an empty [data-peek] slot group in its SVG.
+  function popPeek(landKey, emoji, holdMs) {
+    const slot = app.querySelector('[data-peek="' + landKey + '"]');
+    if (!slot) return;
+    slot.innerHTML = '<text class="wm-peeker" y="-88" text-anchor="middle" font-size="36">' + emoji + '</text>';
+    timer(holdMs || 2600, () => { if (slot.isConnected) slot.innerHTML = ''; });
+  }
+
+  function schedulePeek() {
+    if (screen !== 'map' || reduced()) return;
+    timer(6000 + Math.floor(Math.random() * 8000), () => {
+      if (screen !== 'map') return;
+      const order = world === 2 ? WORLD2 : WORLD1;
+      const hatched = new Set(game.state.companions);
+      const cands = Companions.list.filter((c) => hatched.has(c.id) && order.indexOf(c.land) > -1);
+      if (cands.length) {
+        const c = cands[Math.floor(Math.random() * cands.length)];
+        popPeek(c.land, c.emoji);
+      }
+      schedulePeek();
+    });
+  }
+
+  // Once per kingdom, ever-in-session: every hatched friend of the freed
+  // world pops up land by land, then confetti and a fanfare.
+  function runParade(order) {
+    if (reduced()) {
+      try { Juice.toast('🎉 You freed the whole kingdom! Amazing journey!', 3500); } catch (e) { /* toast only */ }
+      return;
+    }
+    const hatched = new Set(game.state.companions);
+    const friends = Companions.list.filter((c) => hatched.has(c.id) && order.indexOf(c.land) > -1);
+    friends.forEach((c, i) => {
+      timer(600 + i * 320, () => {
+        popPeek(c.land, c.emoji, 2200);
+        AudioKit.play('pop');
+      });
+    });
+    const endAt = 600 + friends.length * 320 + 300;
+    timer(endAt, () => {
+      AudioKit.play('fanfare');
+      try { Juice.toast('🎉 You freed the whole kingdom!', 3500); } catch (e) { /* toast only */ }
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      Particles.burst('confetti', w * 0.5, h * 0.35);
+      timer(350, () => Particles.burst('confetti', w * 0.25, h * 0.4, { count: 40 }));
+      timer(700, () => Particles.burst('confetti', w * 0.75, h * 0.4, { count: 40 }));
+    });
   }
 
   function showCollection() {
@@ -5290,6 +5552,8 @@ const Main = (() => {
     clearTimers();
     landId = id;
     world = WORLD2.indexOf(id) > -1 ? 2 : 1;
+    const order = world === 2 ? WORLD2 : WORLD1;
+    preWorldDone = order.every((l) => ((game.state.lands[l] || {}).stars || 0) > 0);
     bossHits = 0;
     bossIntroShown = false;
     originalsDone = 0;
@@ -5480,7 +5744,13 @@ const Main = (() => {
           }
         });
       }
-      timer(1200, proceedAfterResolve);
+      // the last boss answer breaks the spell: hold the moment a beat longer
+      if (isBossFinale()) {
+        timer(650, golemFreed);
+        timer(2100, proceedAfterResolve);
+      } else {
+        timer(1200, proceedAfterResolve);
+      }
       return;
     }
 
@@ -5509,6 +5779,7 @@ const Main = (() => {
     }
     revealPending = true;
     revealReadyTs = performance.now() + 2800;
+    if (isBossFinale()) timer(650, golemFreed); // kindest on the runs with blocks
     timer(7000, () => {
       if (revealPending) {
         revealPending = false;
@@ -5572,6 +5843,10 @@ const Main = (() => {
     screen = 'celebrate';
     const id = res.landId || landId;
     if (res.stars === 3 && res.starsBefore < 3) starPartyLand = id; // map party on return
+    // kingdom freed for the first time -> friends parade on the next map
+    const order = WORLD2.indexOf(id) > -1 ? WORLD2 : WORLD1;
+    const nowDone = order.every((l) => ((game.state.lands[l] || {}).stars || 0) > 0);
+    if (!preWorldDone && nowDone) paradeWorld = WORLD2.indexOf(id) > -1 ? 2 : 1;
     app.setAttribute('data-land', id);
     const comp = res.bossCompanion || null;
     Screens.celebration(app, { landName: landName(id), stars: res.stars, companion: comp, muted: isMuted() });
