@@ -135,10 +135,10 @@ button {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 0.01em;
-  background: var(--glass);
+  /* solid tint instead of backdrop blur: buttons sit over animated skies and
+     the per-frame blur tax outweighs the look (cards/overlays keep theirs) */
+  background: rgba(29, 27, 75, 0.55);
   border: 1.5px solid var(--glass-edge);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
   box-shadow: var(--shadow-soft);
   color: var(--white);
   transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
@@ -306,6 +306,110 @@ button {
 .wm-balloon { cursor: pointer; }
 .wm-balloon .wm-float { animation: cck-island-float 5.2s ease-in-out infinite; }
 
+/* islands acknowledge the touch: `scale` composes with the SVG transform
+   attribute (a CSS `transform` here would override the island's position) */
+.wm-land, .wm-balloon {
+  transform-box: fill-box;
+  transform-origin: center;
+  transition: scale 0.14s ease;
+}
+.wm-land.wm-pressed, .wm-balloon.wm-pressed { scale: 0.95; }
+
+/* homecoming: the land this run just unlocked says hello */
+.wm-land.wm-justfreed .wm-float { animation: cck-justfreed 1.1s ease, cck-island-float 5.4s ease-in-out 1.1s infinite; }
+@keyframes cck-justfreed {
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-22px) scale(1.08); }
+  65%  { transform: translateY(-4px) scale(0.98); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* flying letter tile (presentation clone; state lands instantly) */
+.tile-fly {
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 18px;
+  font-size: 34px;
+  font-weight: 800;
+  font-family: inherit;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--white), #ddd6ff);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow: var(--shadow-soft);
+  pointer-events: none;
+  transition: transform 0.2s cubic-bezier(0.34, 1.3, 0.64, 1);
+  will-change: transform;
+}
+
+/* friends screen: petting, speech bubbles, collection count */
+.friends-count {
+  margin-left: auto;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: var(--glass);
+  border: 1.5px solid var(--glass-edge);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--gold-soft);
+  white-space: nowrap;
+}
+.friend { position: relative; }
+.friend[data-hatched] { cursor: pointer; }
+.friend-bubble {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  width: max-content;
+  max-width: 200px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: var(--white);
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  box-shadow: var(--shadow-soft);
+  z-index: 4;
+  pointer-events: none;
+}
+.friend-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: var(--white);
+  border-bottom: 0;
+}
+.friend-emoji.friend-pop { animation: cck-cheer-bounce 0.9s ease; }
+
+/* celebration stage bump per star */
+.screen-celebrate.cele-bump { animation: cck-cele-bump 0.22s ease; }
+@keyframes cck-cele-bump {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.015); }
+}
+
+/* settings: scrollable card + the wardrobe try-on stage */
+.settings-card {
+  max-height: min(86vh, 86dvh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+}
+.settings-avatar {
+  display: flex;
+  justify-content: center;
+  height: 116px;
+  flex: 0 0 auto;
+}
+.settings-avatar svg { height: 100%; width: auto; }
+
 /* balloon travel overlay: clouds sweep across, balloon arcs over the top */
 .travel-overlay {
   position: fixed;
@@ -386,7 +490,6 @@ button {
 }
 .wm-aurora {
   animation: cck-aurora 9s ease-in-out infinite alternate;
-  mix-blend-mode: screen;
 }
 @keyframes cck-aurora {
   from { opacity: 0.25; transform: translateY(0); }
@@ -410,7 +513,8 @@ button {
 }
 .wm-land[data-state='locked'] { filter: saturate(0.18) brightness(0.72); }
 .wm-land[data-state='locked'] .wm-float { animation: none; }
-.wm-land[data-state='done'] { filter: drop-shadow(0 0 16px var(--land-glow, rgba(255, 209, 102, 0.5))); }
+/* done-glow lives on the already-rendered ellipse only — a drop-shadow here
+   re-blurred the whole floating island every frame (jank grew with progress) */
 .wm-land[data-state='done'] .wm-doneglow { animation: cck-glow-pulse 2.6s ease-in-out infinite; }
 @keyframes cck-glow-pulse {
   0%, 100% { opacity: 0.35; }
@@ -930,6 +1034,8 @@ button {
   }
   .title-gem, .btn-play, .game-title .grad, .cele-title, .btn-travel,
   .cheer.cheer-bounce, .cheer.cheer-peek,
+  .friend-emoji.friend-pop, .wm-land.wm-justfreed .wm-float,
+  .screen-celebrate.cele-bump, .tv-cloud, .tv-balloon,
   .wm-cloud, .wm-skystar, .wm-aurora, .wm-path, .wm-balloon .wm-float,
   .wm-land .wm-float, .wm-tree, .wm-wave, .wm-snow, .wm-facet, .wm-halo,
   .wm-land[data-state='done'] .wm-doneglow, .wm-land.wm-next .wm-ring,
@@ -937,6 +1043,8 @@ button {
   .cele-card .friend-emoji, .egg-card .friend-emoji, .title-spark {
     animation: none;
   }
+  .travel-overlay::before { animation: none; opacity: 1; }
+  .wm-land, .wm-balloon { transition: none; }
   .av-rig.av-idle { animation: none; }
   .av-rig.av-cartwheel, .av-rig.av-flip, .av-rig.av-stuck {
     animation: cck-gentle-bounce 0.7s ease both;
@@ -3113,6 +3221,25 @@ const AudioKit = (() => {
     akTone({ freq: 2093.0, type: 'sine', at: t + 0.33, dur: 0.3, peak: 0.06, attack: 0.02 });
   }
 
+  // Tile taps climb a major-pentatonic ladder as the word fills — spelling
+  // sounds like playing a tiny xylophone. step: index of the slot being filled.
+  function akPlayTapNote(step) {
+    const semis = [0, 2, 4, 7, 9, 12];
+    const s = semis[Math.max(0, Math.min(semis.length - 1, step | 0))];
+    const f = 523.25 * Math.pow(2, s / 12);
+    const t = akNow();
+    akTone({ freq: f, glideTo: f * 0.8, type: 'triangle', at: t, dur: 0.08, peak: 0.13, attack: 0.004 });
+  }
+
+  // Celebration stars sing do-mi-sol: star i (0-2) lands one chord tone higher.
+  function akPlayStar(i) {
+    const ratios = [1, 1.25, 1.5];
+    const f = 587.33 * ratios[Math.max(0, Math.min(2, i | 0))];
+    const t = akNow();
+    akTone({ freq: f, type: 'sine', at: t, dur: 0.2, peak: 0.16, attack: 0.005 });
+    akTone({ freq: f * 2, type: 'sine', at: t + 0.02, dur: 0.16, peak: 0.05, attack: 0.01 });
+  }
+
   function akPlayBossHit() {
     // Crystalline crack: bright filtered-noise snap plus a glassy ping,
     // both with a very quick decay.
@@ -3202,6 +3329,24 @@ const AudioKit = (() => {
       } catch (e) { /* never throws */ }
     },
 
+    tapNote(step) {
+      try {
+        if (akMuted) return;
+        if (!akCtx || !akMaster) return;
+        if (akCtx.state !== 'running') return;
+        akPlayTapNote(step);
+      } catch (e) { /* never throws */ }
+    },
+
+    star(i) {
+      try {
+        if (akMuted) return;
+        if (!akCtx || !akMaster) return;
+        if (akCtx.state !== 'running') return;
+        akPlayStar(i);
+      } catch (e) { /* never throws */ }
+    },
+
     setMuted(muted) {
       try {
         akMuted = !!muted;
@@ -3235,6 +3380,7 @@ const Juice = (() => {
   let jzToastQueue = [];
   let jzToastShowing = false;
   let jzToastWrap = null;
+  let jzToastCurrent = ''; // text on screen right now (dedupe guard)
   let jzPressified = false; // guard against double-wiring the same document
 
   const JZ_TOAST_HOLD_MS = 2300;  // how long a toast stays before dismissing
@@ -3271,6 +3417,7 @@ const Juice = (() => {
     const next = jzToastQueue.shift();
     if (next === undefined) return;
     jzToastShowing = true;
+    jzToastCurrent = next.text;
 
     const wrap = jzEnsureToastWrap();
     const el = document.createElement('div');
@@ -3288,6 +3435,7 @@ const Juice = (() => {
       window.setTimeout(() => {
         if (el.parentNode) el.parentNode.removeChild(el);
         jzToastShowing = false;
+        jzToastCurrent = '';
         jzShowNextToast();
       }, JZ_TOAST_EXIT_MS);
     }, next.hold);
@@ -3329,8 +3477,13 @@ const Juice = (() => {
     toast(text, holdMs) {
       try {
         if (!jzHasDom() || !text) return;
+        const s = String(text);
+        // dedupe: rapid repeats (locked-island taps) must not queue minutes
+        // of identical toasts — skip when it matches the showing or last-queued
+        const last = jzToastQueue.length ? jzToastQueue[jzToastQueue.length - 1].text : '';
+        if (s === jzToastCurrent || s === last) return;
         const hold = holdMs > 0 ? Number(holdMs) : JZ_TOAST_HOLD_MS;
-        jzToastQueue.push({ text: String(text), hold });
+        jzToastQueue.push({ text: s, hold });
         jzShowNextToast();
       } catch (e) { /* never throws */ }
     },
@@ -3511,6 +3664,7 @@ const Particles = (() => {
     if (reduced) {
       live.length = 0;
       if (ctx) ctx.clearRect(0, 0, cssW, cssH);
+      needsClear = false;
     }
   }
 
@@ -3532,13 +3686,19 @@ const Particles = (() => {
     ctx.restore();
   }
 
+  let needsClear = false; // one final clear after the last particle dies,
+                          // then the 60fps fullscreen clearRect stops entirely
   function tick(dt) {
     if (!ctx) return;
-    ctx.clearRect(0, 0, cssW, cssH);
-    if (!live.length || !dt) {
-      // still clear so stale frames never linger after setReduced(true)
-      if (!live.length) return;
+    if (!live.length) {
+      if (needsClear) {
+        ctx.clearRect(0, 0, cssW, cssH);
+        needsClear = false;
+      }
+      return;
     }
+    ctx.clearRect(0, 0, cssW, cssH);
+    needsClear = true;
     for (let i = live.length - 1; i >= 0; i--) {
       const p = live[i];
       p.age += dt;
@@ -3903,9 +4063,15 @@ const WorldMap = (() => {
       '" role="button" aria-label="' + land.name + '" transform="translate(' + spot.x + ' ' + spot.y + ')">' +
       '<ellipse class="wm-ring" cx="0" cy="-10" rx="' + (big ? 112 : 92) + '" ry="' + (big ? 84 : 70) +
       '" fill="none" stroke="#ffd166" stroke-width="4" opacity="0"/>' +
-      (state === 'done' ? '<ellipse class="wm-doneglow" cx="0" cy="-16" rx="' + (big ? 104 : 84) + '" ry="' + (big ? 74 : 60) + '" fill="#ffd166" opacity="0.35"/>' : '') +
+      (state === 'done' ? '<ellipse class="wm-doneglow" cx="0" cy="-16" rx="' + (big ? 112 : 92) + '" ry="' + (big ? 80 : 66) + '" fill="#ffd166" opacity="0.4"/>' : '') +
       '<g class="wm-float">' + decor +
       (state === 'locked' ? lockIcon() : '') +
+      (land.stars === 3
+        ? '<g class="wm-crown" transform="translate(0 ' + (big ? -152 : -106) + ')">' +
+          '<path d="M-13 7 L-13 -4 L-6.5 2 L0 -9 L6.5 2 L13 -4 L13 7 Z" fill="#ffd166" stroke="#fff3c4" stroke-width="1.5"/>' +
+          '<circle cx="-13" cy="-6" r="2.4" fill="#fff3c4"/><circle cx="0" cy="-11" r="2.8" fill="#fff3c4"/><circle cx="13" cy="-6" r="2.4" fill="#fff3c4"/>' +
+          '</g>'
+        : '') +
       starsRow(land.stars) +
       '<text class="wm-name" x="0" y="62" text-anchor="middle" font-size="' + (big ? 24 : 21) +
       '" fill="#f7f5ff" stroke="#12103a" stroke-width="4" paint-order="stroke">' + land.name + '</text>' +
@@ -3937,20 +4103,28 @@ const WorldMap = (() => {
     return s;
   }
 
-  function windingPath(order) {
-    let d = '';
-    for (let i = 0; i < order.length; i++) {
+  // Per-segment path so completed stretches turn gold — she paints the
+  // treasure trail across the kingdom herself. The glow is a second wider
+  // low-opacity stroke, NOT a drop-shadow (a filter wrapping the animated
+  // dashoffset would re-blur every frame on WebKit).
+  function windingPath(order, lands) {
+    const starsOf = {};
+    for (const l of lands || []) starsOf[l.id] = l.stars;
+    let s = '';
+    for (let i = 1; i < order.length; i++) {
+      const prev = SPOTS[order[i - 1]];
       const p = SPOTS[order[i]];
-      if (i === 0) {
-        d = 'M' + p.x + ' ' + p.y;
-      } else {
-        const prev = SPOTS[order[i - 1]];
-        const mx = (prev.x + p.x) / 2;
-        const my = Math.min(prev.y, p.y) - 46;
-        d += ' Q' + mx + ' ' + my + ' ' + p.x + ' ' + p.y;
+      const mx = (prev.x + p.x) / 2;
+      const my = Math.min(prev.y, p.y) - 46;
+      const d = 'M' + prev.x + ' ' + prev.y + ' Q' + mx + ' ' + my + ' ' + p.x + ' ' + p.y;
+      const lit = (starsOf[order[i - 1]] || 0) > 0;
+      if (lit) {
+        s += '<path class="wm-path-glow" d="' + d + '" fill="none" stroke="#ffd166" stroke-width="12" stroke-linecap="round" opacity="0.16"/>';
       }
+      s += '<path class="wm-path" d="' + d + '" fill="none" stroke="' + (lit ? '#ffd166' : '#f7f5ff') +
+        '" stroke-width="5" stroke-linecap="round" opacity="' + (lit ? '0.85' : '0.45') + '"/>';
     }
-    return '<path class="wm-path" d="' + d + '" fill="none" stroke="#f7f5ff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>';
+    return s;
   }
 
   function render(container, view, onSelectLand, onTravel) {
@@ -3962,7 +4136,7 @@ const WorldMap = (() => {
 
     let svg = '<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-label="Kingdom map">';
     svg += skyBits();
-    svg += windingPath(view.world === 2 ? W2_ORDER : W1_ORDER);
+    svg += windingPath(view.world === 2 ? W2_ORDER : W1_ORDER, view.lands);
     for (const land of view.lands) {
       svg += landGroup(land, view.highlight === land.id);
     }
@@ -3980,6 +4154,19 @@ const WorldMap = (() => {
       const g = t && t.closest ? t.closest('.wm-land') : null;
       if (g && onSelectLand) onSelectLand(g.getAttribute('data-land'));
     };
+    // islands acknowledge the touch: press squish via the standalone `scale`
+    // property (the transform ATTRIBUTE keeps the island's position; CSS
+    // `transform` would override it, `scale` composes with it)
+    const releaseAll = () => {
+      for (const el of container.querySelectorAll('.wm-pressed')) el.classList.remove('wm-pressed');
+    };
+    container.onpointerdown = (e) => {
+      const g = e.target && e.target.closest ? e.target.closest('.wm-land, [data-balloon]') : null;
+      if (g) g.classList.add('wm-pressed');
+    };
+    container.onpointerup = releaseAll;
+    container.onpointercancel = releaseAll;
+    container.onpointerleave = releaseAll;
   }
 
   return { render };
@@ -4414,7 +4601,9 @@ const Screens = (() => {
     for (const c of list) {
       const hatched = have.has(c.id);
       cards +=
-        '<div class="card friend' + (hatched ? '' : ' friend-shadow') + '">' +
+        '<div class="card friend' + (hatched ? '' : ' friend-shadow') + '" data-friend="' + esc(c.id) + '"' +
+        (hatched ? ' data-hatched' : '') + ' data-land-name="' + esc((landNames && landNames[c.land]) || c.land) + '">' +
+        (hatched ? '<span class="friend-bubble" data-bubble hidden>' + esc(c.line || '') + '</span>' : '') +
         '<span class="friend-emoji' + (hatched ? ' bob' : '') + '">' + esc(c.emoji) + '</span>' +
         '<span class="friend-name">' + (hatched ? esc(c.name) : 'A mystery friend') + '</span>' +
         '<span class="friend-land">' + esc((landNames && landNames[c.land]) || c.land) + '</span>' +
@@ -4425,6 +4614,7 @@ const Screens = (() => {
       '<header class="friends-top">' +
       '<button class="btn btn-ghost" data-action="back-map" data-press>🗺️ Map</button>' +
       '<h1 class="friends-title">Charlie&#39;s Friends</h1>' +
+      '<span class="friends-count">' + have.size + ' of ' + list.length + ' friends</span>' +
       '</header>' +
       '<div class="friends-grid">' + cards + '</div>' +
       '</section>';
@@ -4452,6 +4642,7 @@ const Screens = (() => {
     wrap.innerHTML =
       '<div class="card settings-card">' +
       '<h2 data-settings-title>Settings</h2>' +
+      '<div class="settings-avatar" data-avatar-preview></div>' +
       '<button class="btn btn-big" data-action="toggle-mute" data-press data-mute-btn>' +
       muteLabel(o.muted) + '</button>' +
       (swatches
@@ -4555,6 +4746,9 @@ const Main = (() => {
   let cheerEmoji = '';       // this run's companion cheerleader
   let titleTaps = 0;         // triple-tap counter for the grown-up peek
   let titleTapTs = 0;
+  let launching = false;     // one-shot lock during the island launch beat
+  let preUnlocked = null;    // unlock snapshot before a run (homecoming pop)
+  let starPartyLand = '';    // land that JUST earned its first third star
 
   // Wardrobe: leotards unlock by shining 3 stars on lands.
   const LOOK_ORDER = ['crystal', 'sunset', 'meadow', 'midnight', 'gold'];
@@ -4629,6 +4823,50 @@ const Main = (() => {
     void el.getBoundingClientRect();
     el.classList.add(cls);
   }
+
+  // A tapped letter tile flies into its slot (clone -> fixed-position
+  // transition -> land). State (slotsArr) is authoritative the moment the tap
+  // lands; the flight is presentation only, and landing re-checks ownership
+  // so a fast backspace mid-flight never resurrects a stale letter.
+  function flyTileToSlot(tile, slotIndex, letter) {
+    if (reduced()) {
+      Screens.setSlot(app, slotIndex, letter);
+      return;
+    }
+    const slot = app.querySelector('[data-slot="' + slotIndex + '"]');
+    if (!slot || !tile) {
+      Screens.setSlot(app, slotIndex, letter);
+      return;
+    }
+    const a = tile.getBoundingClientRect();
+    const b = slot.getBoundingClientRect();
+    if (!a.width || !b.width) {
+      Screens.setSlot(app, slotIndex, letter);
+      return;
+    }
+    const fly = document.createElement('div');
+    fly.className = 'tile-fly';
+    fly.textContent = letter;
+    fly.style.left = a.left + 'px';
+    fly.style.top = a.top + 'px';
+    fly.style.width = a.width + 'px';
+    fly.style.height = a.height + 'px';
+    document.body.appendChild(fly);
+    void fly.getBoundingClientRect();
+    fly.style.transform =
+      'translate(' + (b.left - a.left + (b.width - a.width) / 2) + 'px,' +
+      (b.top - a.top + (b.height - a.height) / 2) + 'px) scale(' + (b.width / a.width) + ')';
+    let landed = false;
+    const land = () => {
+      if (landed) return;
+      landed = true;
+      if (fly.isConnected) fly.remove();
+      const owner = slotsArr[slotIndex];
+      if (owner && owner.letter === letter) Screens.setSlot(app, slotIndex, letter);
+    };
+    fly.addEventListener('transitionend', land, { once: true });
+    setTimeout(land, 350); // safety: transitionend can be swallowed by re-renders
+  }
   function isMuted() {
     return !!(game && game.state && game.state.settings && game.state.settings.muted);
   }
@@ -4674,7 +4912,7 @@ const Main = (() => {
     document.addEventListener('visibilitychange', () => {
       if (!document.hidden) AudioKit.poke();
     });
-    // soft pop on any button press
+    // soft pop on any button press; letter tiles climb a pentatonic ladder
     app.addEventListener('pointerdown', (e) => {
       const t = e.target;
       // a reach for backspace must always beat the tile auto-submit
@@ -4682,7 +4920,12 @@ const Main = (() => {
         clearTimeout(pendingSubmitTimer);
         pendingSubmitTimer = 0;
       }
-      if (t && t.closest && t.closest('button')) AudioKit.play('tap');
+      const tileBtn = t && t.closest && t.closest('[data-tile]');
+      if (tileBtn && !tileBtn.classList.contains('tile-used')) {
+        AudioKit.tapNote(slotsArr.length); // pitch rises as the word fills
+      } else if (t && t.closest && t.closest('button')) {
+        AudioKit.play('tap');
+      }
     });
     Juice.pressify(app);
     app.addEventListener('click', onTap);
@@ -4728,6 +4971,13 @@ const Main = (() => {
     if (actBtn) {
       handleAction(actBtn.getAttribute('data-action'), actBtn);
       return;
+    }
+    if (screen === 'friends') {
+      const card = t && t.closest ? t.closest('[data-friend]') : null;
+      if (card) {
+        friendTap(card);
+        return;
+      }
     }
     if (screen === 'celebrate') {
       onCeleTap();
@@ -4833,6 +5083,38 @@ const Main = (() => {
       startLand,
       () => travelTo(world === 1 ? 2 : 1)
     );
+    // homecoming: pop the land this run just unlocked, with a chime
+    if (preUnlocked) {
+      const snap = preUnlocked;
+      preUnlocked = null;
+      const newly = order.filter((l) => !snap.has(l) && game.landStatus(l).unlocked);
+      if (newly.length && !reduced()) {
+        timer(350, () => {
+          for (const l of newly) {
+            const g = app.querySelector('.wm-land[data-land="' + l + '"]');
+            if (g) {
+              g.classList.add('wm-justfreed');
+              const c = centerOf(g);
+              Particles.burst('sparkle', c.x, c.y - 30, { count: 16 });
+            }
+          }
+          AudioKit.play('hatch');
+        });
+      }
+    }
+    // first-ever third star on a land: confetti over its new crown
+    if (starPartyLand) {
+      const partyLand = starPartyLand;
+      starPartyLand = '';
+      if (!reduced()) {
+        timer(500, () => {
+          const g = app.querySelector('.wm-land[data-land="' + partyLand + '"]');
+          const c = centerOf(g);
+          Particles.burst('confetti', c.x, c.y - 40, { count: 45 });
+          AudioKit.play('levelup');
+        });
+      }
+    }
     // once per app load: point at the travel button while world 2 is untouched
     if (world === 1 && world2Open && !newWorldToast
       && WORLD2.every((id) => game.landStatus(id).stars === 0)) {
@@ -4846,6 +5128,36 @@ const Main = (() => {
     screen = 'friends';
     app.removeAttribute('data-land');
     Screens.collection(app, Companions.list, game.state.companions, Copy.landNames || LAND_NAMES);
+  }
+
+  // Petting a hatched friend: bounce + chime + its personality line in a
+  // bubble. Shadow friends wiggle and hint where they sleep.
+  function friendTap(card) {
+    if (card.getAttribute('data-busy')) return;
+    card.setAttribute('data-busy', '1');
+    setTimeout(() => { if (card.isConnected) card.removeAttribute('data-busy'); }, 320);
+    if (card.hasAttribute('data-hatched')) {
+      const emoji = card.querySelector('.friend-emoji');
+      if (emoji && !reduced()) {
+        emoji.classList.remove('friend-pop');
+        void emoji.getBoundingClientRect();
+        emoji.classList.add('friend-pop');
+      }
+      AudioKit.play('hatch');
+      if (!reduced()) {
+        const c = centerOf(card);
+        Particles.burst('sparkle', c.x, c.y - 24, { count: 8 });
+      }
+      const b = card.querySelector('[data-bubble]');
+      if (b) {
+        b.hidden = false;
+        setTimeout(() => { if (b.isConnected) b.hidden = true; }, 2600);
+      }
+    } else {
+      Juice.shake(card);
+      const where = card.getAttribute('data-land-name') || 'the kingdom';
+      try { Juice.toast('A mystery friend sleeps in ' + where + '!'); } catch (e) { /* toast only */ }
+    }
   }
 
   function openSettings() {
@@ -4874,27 +5186,44 @@ const Main = (() => {
       { label: 'Friends hatched', note: game.state.companions.length + ' of 30' },
     ];
     settingsEl = Screens.settings(app, { muted: isMuted(), swatches, parentRows });
+    // Charlie tries on her leotard right in the card
+    const prev = settingsEl.querySelector('[data-avatar-preview]');
+    if (prev) Avatar.mount(prev, look());
   }
   function setLook(btn) {
     const key = btn.getAttribute('data-look');
     const need = LOOK_UNLOCK[key];
     if (need === undefined) return;
-    if (threeStarCount() >= need) {
-      game.setLook(key); // persists immediately
-      AudioKit.play('hatch');
-      try { Juice.toast('✨ ' + (Avatar.LOOKS[key] ? Avatar.LOOKS[key].name : '') + ' leotard on!'); } catch (e) { /* toast only */ }
-      closeSettings();
-      openSettings(); // re-render swatch states
-      const av = app.querySelector('[data-avatar]');
-      if (av) Avatar.mount(av, look()); // live preview if mid-challenge
-    } else {
+    if (threeStarCount() < need) {
       try { Juice.toast('Shine 3 stars on ' + need + ' lands to open this one!'); } catch (e) { /* toast only */ }
+      return;
+    }
+    game.setLook(key); // persists immediately
+    AudioKit.play('hatch');
+    // in-place update: no card blink, parent peek stays as she left it
+    if (settingsEl && settingsEl.isConnected) {
+      for (const s of settingsEl.querySelectorAll('.swatch')) {
+        s.classList.toggle('current', s.getAttribute('data-look') === key);
+      }
+      const prev = settingsEl.querySelector('[data-avatar-preview]');
+      if (prev) {
+        Avatar.mount(prev, key);
+        Avatar.trick(1); // a little cartwheel in the new leotard
+        if (!reduced()) {
+          const c = centerOf(prev);
+          Particles.burst('sparkle', c.x, c.y, { count: 12 });
+        }
+      }
     }
   }
   function closeSettings() {
     if (settingsEl) {
       settingsEl.remove();
       settingsEl = null;
+      // Avatar is single-instance: re-point it at the challenge rig (in the
+      // possibly-new leotard) after the settings preview borrowed it
+      const av = app.querySelector('[data-avatar]');
+      if (av && screen === 'challenge') Avatar.mount(av, look());
     }
   }
   function openLeaveConfirm() {
@@ -4934,6 +5263,30 @@ const Main = (() => {
       Juice.toast('Light up the path to open this land!');
       return;
     }
+    if (launching) return;
+    // homecoming snapshot: which lands were unlocked before this run
+    preUnlocked = new Set(WORLD1.concat(WORLD2).filter((l) => game.landStatus(l).unlocked));
+    if (st.stars === 3) starPartyLand = ''; // already crowned; no re-party
+    if (reduced()) {
+      beginLand(id);
+      return;
+    }
+    // launch beat: the island acknowledges her, then the land opens
+    launching = true;
+    const g = app.querySelector('.wm-land[data-land="' + id + '"]');
+    if (g) {
+      const c = centerOf(g);
+      Particles.burst('sparkle', c.x, c.y - 30, { count: 14 });
+    }
+    AudioKit.play('pop');
+    setTimeout(() => {
+      launching = false;
+      if (screen !== 'map') return; // she navigated away during the beat
+      beginLand(id);
+    }, 350);
+  }
+
+  function beginLand(id) {
     clearTimers();
     landId = id;
     world = WORLD2.indexOf(id) > -1 ? 2 : 1;
@@ -4989,7 +5342,7 @@ const Main = (() => {
     const letter = tile.getAttribute('data-tile');
     tile.classList.add('tile-used');
     slotsArr.push({ letter, el: tile });
-    Screens.setSlot(app, slotsArr.length - 1, letter);
+    flyTileToSlot(tile, slotsArr.length - 1, letter);
     if (slotsArr.length === word.length) {
       // unhurried pause: backspace stays available before auto-submit, and a
       // pointerdown on backspace cancels this timer (wired in boot)
@@ -5218,6 +5571,7 @@ const Main = (() => {
     run = null;
     screen = 'celebrate';
     const id = res.landId || landId;
+    if (res.stars === 3 && res.starsBefore < 3) starPartyLand = id; // map party on return
     app.setAttribute('data-land', id);
     const comp = res.bossCompanion || null;
     Screens.celebration(app, { landName: landName(id), stars: res.stars, companion: comp, muted: isMuted() });
@@ -5237,22 +5591,25 @@ const Main = (() => {
       timer(940, () => Particles.burst('confetti', w * 0.78, h * 0.38, { count: 45 }));
     }
 
-    // star reveal, one by one
+    // star reveal, one by one — each sings do-mi-sol and bumps the stage
     for (let i = 1; i <= stars; i++) {
-      timer(1400 + (i - 1) * 700, () => {
+      timer(1400 + (i - 1) * 580, () => {
         const star = stage.querySelector('[data-star="' + i + '"]');
         if (star) {
           star.classList.add('lit');
-          AudioKit.play('pop');
+          AudioKit.star(i - 1);
           if (!noMotion) {
             const c = centerOf(star);
-            Particles.burst('sparkle', c.x, c.y, { count: 14 });
+            Particles.burst('sparkle', c.x, c.y, { count: 12 + i * 4 });
+            stage.classList.remove('cele-bump');
+            void stage.getBoundingClientRect();
+            stage.classList.add('cele-bump');
           }
         }
       });
     }
 
-    let t = 1400 + stars * 700 + 250;
+    let t = 1400 + stars * 580 + 250;
     if (comp) {
       const eggT = t;
       timer(eggT, () => {
@@ -5274,12 +5631,16 @@ const Main = (() => {
       });
       t = eggT + 1900;
     }
-    timer(2000, () => {
-      if (!celeDone) {
-        const note = stage.querySelector('[data-skip-note]');
-        if (note) note.hidden = false;
-      }
-    });
+    // skip note only when there is genuinely something to skip — on short
+    // one-star runs it used to flicker for ~350ms right before the finish
+    if (t > 3200) {
+      timer(2000, () => {
+        if (!celeDone) {
+          const note = stage.querySelector('[data-skip-note]');
+          if (note) note.hidden = false;
+        }
+      });
+    }
     timer(t, finishCele);
 
     celeFinal = () => {
