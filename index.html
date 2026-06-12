@@ -54,6 +54,14 @@
 [data-land='summit']   { --land-a: #ffd166; --land-b: #ff8e7a; --land-glow: rgba(255, 209, 102, 0.45); }
 [data-land='castle']   { --land-a: #7ef0e2; --land-b: #c4b5fd; --land-glow: rgba(126, 240, 226, 0.5); }
 
+/* world 2 — Starlight Kingdom */
+[data-land='grove']      { --land-a: #6ee7b7; --land-b: #a3e635; --land-glow: rgba(110, 231, 183, 0.4); }
+[data-land='lagoon']     { --land-a: #38bdf8; --land-b: #818cf8; --land-glow: rgba(56, 189, 248, 0.4); }
+[data-land='cliffs']     { --land-a: #c4b5fd; --land-b: #f0abfc; --land-glow: rgba(196, 181, 253, 0.4); }
+[data-land='maze']       { --land-a: #e879f9; --land-b: #7ef0e2; --land-glow: rgba(232, 121, 249, 0.45); }
+[data-land='lighthouse'] { --land-a: #fbbf24; --land-b: #38bdf8; --land-glow: rgba(251, 191, 36, 0.45); }
+[data-land='starcastle'] { --land-a: #ffd166; --land-b: #f0abfc; --land-glow: rgba(255, 209, 102, 0.5); }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body {
@@ -234,6 +242,18 @@ button {
   text-shadow: 0 2px 12px rgba(8, 6, 30, 0.6);
 }
 .map-actions { display: flex; gap: 12px; }
+
+/* travel button between the two kingdoms */
+.btn-travel {
+  font-size: 22px;
+  padding: 10px 18px;
+  border: 2px solid var(--gold);
+  animation: cck-travel-pulse 2.2s ease-in-out infinite;
+}
+@keyframes cck-travel-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.25), var(--shadow-soft); }
+  50%      { box-shadow: 0 0 0 8px rgba(255, 209, 102, 0.45), var(--shadow-soft); }
+}
 
 /* --- world map SVG pieces --- */
 .wm-cloud { animation: cck-drift 26s linear infinite; }
@@ -792,7 +812,7 @@ button {
     from { opacity: 0; }
     to   { opacity: 1; }
   }
-  .title-gem, .btn-play, .game-title .grad, .cele-title,
+  .title-gem, .btn-play, .game-title .grad, .cele-title, .btn-travel,
   .wm-cloud, .wm-skystar, .wm-aurora, .wm-path,
   .wm-land .wm-float, .wm-tree, .wm-wave, .wm-snow, .wm-facet, .wm-halo,
   .wm-land[data-state='done'] .wm-doneglow, .wm-land.wm-next .wm-ring,
@@ -1024,6 +1044,12 @@ const Copy = (() => {
     palace: 'A crystal golem blocks the throne room! Spot the patterns!',
     summit: 'A golden golem guards the stories! Read closely, hero!',
     castle: 'The greatest golem of all awaits! Use everything you know!',
+    grove: 'A firefly golem glows in the trees! Build words to pass!',
+    lagoon: 'A pearly golem rises from the lagoon! Rhyme to calm the waves!',
+    cliffs: 'A comet golem crashes down! Count fast, brave explorer!',
+    maze: 'A mirror golem copies your every move! Spot the patterns!',
+    lighthouse: 'A lantern golem guards the lamp! Read closely, hero!',
+    starcastle: 'The star golem shines above all! Use everything you know!',
   };
   const landNames = {
     woods: 'Word Woods',
@@ -1032,6 +1058,12 @@ const Copy = (() => {
     palace: 'Pattern Palace',
     summit: 'Story Summit',
     castle: 'Crystal Castle',
+    grove: 'Starlight Grove',
+    lagoon: 'Echo Lagoon',
+    cliffs: 'Comet Cliffs',
+    maze: 'Mirror Maze',
+    lighthouse: 'Legend Lighthouse',
+    starcastle: 'Star Castle',
   };
   const pickFrom = (rng, arr) => arr[Math.min(arr.length - 1, Math.floor(rng() * arr.length))];
   const ALL_PLAYER_STRINGS = [
@@ -1054,8 +1086,8 @@ const Copy = (() => {
 })();
 
 // === src/content/companions.js ===
-// src/content/companions.js — 15 collectible companions, 3 per land,
-// ordered [challenge3, challenge6, boss] within each land.
+// src/content/companions.js — 30 collectible companions, 3 per land
+// (both kingdoms), ordered [challenge3, challenge6, boss] within each land.
 const Companions = (() => {
   const list = [
     // Word Woods
@@ -1078,6 +1110,26 @@ const Companions = (() => {
     { id: 'goldie', name: 'Goldie the Lion', land: 'summit', emoji: '🦁', line: 'My mane shines like the summit sun!' },
     { id: 'skye', name: 'Skye the Eagle', land: 'summit', emoji: '🦅', line: 'I carry your stories across the whole sky!' },
     { id: 'sage', name: 'Sage the Owl', land: 'summit', emoji: '🦉', line: 'I have read every story on this summit!' },
+    // Starlight Grove
+    { id: 'maple', name: 'Maple the Chipmunk', land: 'grove', emoji: '🐿️', line: 'I stuff my cheeks with starberries. Want one?' },
+    { id: 'bramble', name: 'Bramble the Raccoon', land: 'grove', emoji: '🦝', line: 'I only sneak snacks — and hugs!' },
+    { id: 'wisp', name: 'Wisp the Wolf', land: 'grove', emoji: '🐺', line: 'I sing to the moon every single night!' },
+    // Echo Lagoon
+    { id: 'splash', name: 'Splash the Dolphin', land: 'lagoon', emoji: '🐬', line: 'I flip out of the water — just like you!' },
+    { id: 'sandy', name: 'Sandy the Crab', land: 'lagoon', emoji: '🦀', line: 'I scuttle sideways. Race you down the beach!' },
+    { id: 'marina', name: 'Marina the Seal', land: 'lagoon', emoji: '🦭', line: 'I clap my flippers when you solve one!' },
+    // Comet Cliffs
+    { id: 'comet', name: 'Comet the Goat', land: 'cliffs', emoji: '🐐', line: 'I leap from cliff to cliff. Wheee!' },
+    { id: 'stella', name: 'Stella the Llama', land: 'cliffs', emoji: '🦙', line: 'My wool is full of stardust. So cozy!' },
+    { id: 'boulder', name: 'Boulder the Ram', land: 'cliffs', emoji: '🐏', line: 'I bonk rocks out of your path. Bonk!' },
+    // Mirror Maze
+    { id: 'plume', name: 'Plume the Peacock', land: 'maze', emoji: '🦚', line: 'My feathers show every color of the maze!' },
+    { id: 'flick', name: 'Flick the Lizard', land: 'maze', emoji: '🦎', line: 'I zip through mirrors before they blink!' },
+    { id: 'shadow', name: 'Shadow the Cat', land: 'maze', emoji: '🐈‍⬛', line: 'I always find the secret way through!' },
+    // Legend Lighthouse
+    { id: 'beacon', name: 'Beacon the Whale', land: 'lighthouse', emoji: '🐳', line: 'My spout sprays stories into the sky!' },
+    { id: 'pip', name: 'Pip the Parrot', land: 'lighthouse', emoji: '🦜', line: 'I repeat the best lines from every story!' },
+    { id: 'rosy', name: 'Rosy the Flamingo', land: 'lighthouse', emoji: '🦩', line: 'I stand on one leg to listen better!' },
   ];
   return {
     list,
@@ -1133,6 +1185,9 @@ const WordsBank = (() => {
       wb(1, 'CUP', '☕', 'You drink cocoa from it.', h1a, spell('CUP')),
       wb(1, 'JAM', '🍓', 'Sweet strawberry spread for your toast.', h1b, spell('JAM')),
       wb(1, 'WEB', '🕸️', 'A spider spins this.', h1c, spell('WEB')),
+      wb(1, 'OWL', '🦉', 'A night bird that says whoo.', h1a, spell('OWL')),
+      wb(1, 'GEM', '💎', 'A sparkly little stone.', h1b, spell('GEM')),
+      wb(1, 'SKY', '🌌', 'Where the stars live at night.', h1c, spell('SKY')),
     ],
     2: [
       wb(2, 'FROG', '🐸', 'A green hopper that says ribbit.', h2a, spell('FROG')),
@@ -1147,6 +1202,9 @@ const WordsBank = (() => {
       wb(2, 'WHALE', '🐋', 'The biggest animal in the ocean.', h2b, spell('WHALE')),
       wb(2, 'PLANT', '🌱', 'It grows from a seed in soil.', h2a, spell('PLANT')),
       wb(2, 'TRAIN', '🚂', 'It rides on tracks and says choo choo.', h2b, spell('TRAIN')),
+      wb(2, 'MOON', '🌙', 'It glows in the sky at night.', h2a, spell('MOON')),
+      wb(2, 'CLOUD', '☁️', 'A fluffy white shape in the sky.', h2b, spell('CLOUD')),
+      wb(2, 'COMET', '☄️', 'A space rock with a glowing tail.', h2a, spell('COMET')),
     ],
     3: [
       wb(3, 'RABBIT', '🐰', 'A long-eared hopper who loves carrots.', h3a, chunk('RABBIT', ['rab', 'bit'])),
@@ -1160,6 +1218,9 @@ const WordsBank = (() => {
       wb(3, 'DRAGON', '🐉', 'A storybook beast that breathes fire.', h3a, chunk('DRAGON', ['drag', 'on'])),
       wb(3, 'PENCIL', '✏️', 'You write and draw with it.', h3b, chunk('PENCIL', ['pen', 'cil'])),
       wb(3, 'POCKET', '👖', 'Jeans have one to hold tiny treasures.', h3a, chunk('POCKET', ['pock', 'et'])),
+      wb(3, 'LAGOON', '🏝️', 'A calm pool of sea water.', h3b, chunk('LAGOON', ['la', 'goon'])),
+      wb(3, 'MIRROR', '🪞', 'You see yourself inside it.', h3a, chunk('MIRROR', ['mir', 'ror'])),
+      wb(3, 'PLANET', '🪐', 'A big round world in space.', h3b, chunk('PLANET', ['plan', 'et'])),
     ],
     4: [
       wb(4, 'CASTLE', '🏰', 'A royal home with tall towers.', h4a, chunk('CASTLE', ['cas', 'tle'])),
@@ -1173,6 +1234,9 @@ const WordsBank = (() => {
       wb(4, 'DOLPHIN', '🐬', 'A playful sea animal that leaps from waves.', h4a, chunk('DOLPHIN', ['dol', 'phin'])),
       wb(4, 'MEADOW', '🌼', 'A grassy field full of flowers.', h4b, chunk('MEADOW', ['mead', 'ow'])),
       wb(4, 'TUMBLE', '🤸', 'A roll or flip in gymnastics.', h4a, chunk('TUMBLE', ['tum', 'ble'])),
+      wb(4, 'LANTERN', '🏮', 'A little light you carry at night.', h4b, chunk('LANTERN', ['lan', 'tern'])),
+      wb(4, 'GALAXY', '💫', 'A giant family of stars.', h4a, chunk('GALAXY', ['gal', 'ax', 'y'])),
+      wb(4, 'RAINBOW', '🌈', 'An arch of colors after rain.', h4b, chunk('RAINBOW', ['rain', 'bow'])),
     ],
     5: [
       wb(5, 'ADVENTURE', '🗺️', 'An exciting trip full of surprises.', h5a, chunk('ADVENTURE', ['ad', 'ven', 'ture'])),
@@ -1187,6 +1251,9 @@ const WordsBank = (() => {
       wb(5, 'MOUNTAIN', '⛰️', 'A giant rocky peak that touches the clouds.', h5b, chunk('MOUNTAIN', ['moun', 'tain'])),
       wb(5, 'SOMERSAULT', '🤸', 'A head-over-heels roll.', h5a, chunk('SOMERSAULT', ['som', 'er', 'sault'])),
       wb(5, 'WATERFALL', '💦', 'A river pouring off a cliff.', h5b, chunk('WATERFALL', ['wa', 'ter', 'fall'])),
+      wb(5, 'STARLIGHT', '🌟', 'The glow that falls from stars at night.', h5a, chunk('STARLIGHT', ['star', 'light'])),
+      wb(5, 'FIREWORKS', '🎆', 'Colorful booms in the night sky.', h5b, chunk('FIREWORKS', ['fire', 'works'])),
+      wb(5, 'TELESCOPE', '🔭', 'You peek through it to see far planets.', h5a, chunk('TELESCOPE', ['tel', 'e', 'scope'])),
     ],
   };
 })();
@@ -1236,6 +1303,8 @@ const RhymesBank = (() => {
       rb(1, ask('bell'), ['drum', 'shell', 'song'], 1, h1, 'Shell rhymes with bell — both end with -ell.'),
       rb(1, ask('day'), ['night', 'sun', 'play'], 2, h1, 'Play rhymes with day — both end with -ay.'),
       rb(1, ask('goat'), ['boat', 'sheep', 'barn'], 0, h1, 'Boat rhymes with goat — both end with -oat.'),
+      rb(1, ask('night'), ['light', 'day', 'moon'], 0, h1, 'Light rhymes with night — both end with -ight.'),
+      rb(1, ask('fish'), ['dish', 'sea', 'fin'], 0, h1, 'Dish rhymes with fish — both end with -ish.'),
     ],
     2: [
       rb(2, ask('goat'), ['got', 'coat', 'goal', 'gate'], 1, h2, 'Coat rhymes with goat — listen: oat, oat!'),
@@ -1248,6 +1317,8 @@ const RhymesBank = (() => {
       rb(2, ask('love'), ['stove', 'glove', 'cove', 'leaf'], 1, h2, 'Glove rhymes with love — both say "uv"!'),
       rb(2, ask('word'), ['cord', 'sword', 'ward', 'bird'], 3, h2, 'Word says "wurd" — it rhymes with bird!'),
       rb(2, ask('head'), ['bead', 'sled', 'heat', 'hide'], 1, h2, 'Head says "hed" — it rhymes with sled!'),
+      rb(2, ask('glow'), ['cow', 'snow', 'how', 'glop'], 1, h2, 'Glow rhymes with snow — both say "oh"!'),
+      rb(2, ask('done'), ['bone', 'fun', 'cone', 'dome'], 1, h2, 'Done says "dun" — it rhymes with fun!'),
     ],
     3: [
       rb(3, two, ['snake', 'sun', 'cake', 'dog'], [0, 2], h3, 'Snake and cake rhyme — both end with -ake.'),
@@ -1260,6 +1331,8 @@ const RhymesBank = (() => {
       rb(3, two, ['car', 'sun', 'star', 'moon'], [0, 2], h3, 'Car and star rhyme — both say "ar".'),
       rb(3, two, ['frog', 'log', 'pond', 'leaf'], [0, 1], h3, 'Frog and log rhyme — both end with -og.'),
       rb(3, two, ['tree', 'ant', 'bee', 'bug'], [0, 2], h3, 'Tree and bee rhyme — both say "ee".'),
+      rb(3, two, ['night', 'tree', 'light', 'star'], [0, 2], h3, 'Night and light rhyme — both say "ite".'),
+      rb(3, two, ['cave', 'sea', 'wave', 'rock'], [0, 2], h3, 'Cave and wave rhyme — both say "ave".'),
     ],
     4: [
       rb(4, odd, ['cat', 'hat', 'bat', 'dog'], 3, h4, 'Dog ends with -og — the others end with -at.'),
@@ -1272,6 +1345,8 @@ const RhymesBank = (() => {
       rb(4, odd, ['star', 'car', 'cow', 'far'], 2, h4, 'Cow says "ow" — the others say "ar".'),
       rb(4, odd, ['king', 'kind', 'ring', 'sing'], 1, h4, 'Kind says "ind" — the others end with -ing.'),
       rb(4, odd, ['bear', 'chair', 'ear', 'pear'], 2, h4, 'Ear says "eer" — the others say "air".'),
+      rb(4, odd, ['light', 'bright', 'laugh', 'night'], 2, h4, 'Laugh says "aff" — the others end with -ight.'),
+      rb(4, odd, ['sea', 'bee', 'sun', 'tree'], 2, h4, 'Sun says "un" — the others say "ee".'),
     ],
     5: [
       rb(5, 'I rhyme with bear, and you can sit on me.', ['stool', 'chair', 'bed', 'sofa'], 1, h5, 'A chair! Chair rhymes with bear, and you sit on it.'),
@@ -1284,6 +1359,8 @@ const RhymesBank = (() => {
       rb(5, 'I rhyme with king, and you wear me on your finger.', ['watch', 'crown', 'ring', 'glove'], 2, h5, 'A ring! Ring rhymes with king.'),
       rb(5, 'I rhyme with night, and I fly on a string.', ['kite', 'bird', 'plane', 'flag'], 0, h5, 'A kite! Kite rhymes with night.'),
       rb(5, 'I rhyme with bug, and you sip warm cocoa from me.', ['cup', 'glass', 'mug', 'bowl'], 2, h5, 'A mug! Mug rhymes with bug.'),
+      rb(5, 'I rhyme with dream, and I am a line of glowing light.', ['beam', 'lamp', 'spark', 'glow'], 0, h5, 'A beam! Beam rhymes with dream and glows.'),
+      rb(5, 'I rhyme with house, and I squeak and love cheese.', ['mouse', 'rat', 'bird', 'cat'], 0, h5, 'A mouse! Mouse rhymes with house.'),
     ],
   };
 })();
@@ -1536,6 +1613,8 @@ const PatternsBank = (() => {
       pb(1, next('🦊 🍄 🦊 🍄 🦊'), ['🦊', '🌰', '🍄', '🍂'], 2, h1, 'Mushroom! It goes fox, mushroom, fox, mushroom.', true),
       pb(1, next('💎 ✨ ✨ 💎 ✨ ✨ 💎'), ['💎', '🌙', '⭐', '✨'], 3, h1, 'Sparkle! The pattern is gem, sparkle, sparkle.', true),
       pb(1, next('🐢 🐠 🐢 🐠 🐢'), ['🐠', '🐢', '🦀', '🐬'], 0, h1, 'Fish! It goes turtle, fish, turtle, fish.', true),
+      pb(1, next('🐬 🌊 🐬 🌊 🐬'), ['🐚', '🌊', '🐬', '⭐'], 1, h1, 'Wave! It goes dolphin, wave, dolphin, wave.', true),
+      pb(1, next('🦉 🌙 🌙 🦉 🌙 🌙 🦉'), ['🦉', '⭐', '🌙', '☁️'], 2, h1, 'Moon! The pattern is owl, moon, moon.', true),
     ],
     2: [
       pb(2, next('🐸 🐸 🦋 🐸 🐸 🦋 🐸 🐸'), ['🦋', '🐸', '🌸', '🐢'], 0, h2, 'Butterfly! The beat is frog, frog, butterfly.', true),
@@ -1548,6 +1627,8 @@ const PatternsBank = (() => {
       pb(2, next('🌲 🌲 🦊 🌲 🌲 🦊 🌲 🌲'), ['🌲', '🍄', '🦊', '🦔'], 2, h2, 'Fox! The beat is tree, tree, fox.', true),
       pb(2, next('❄️❄️ ❄️❄️❄️ ❄️❄️❄️❄️'), ['❄️❄️❄️', '❄️❄️❄️❄️❄️', '❄️❄️❄️❄️', '❄️❄️❄️❄️❄️❄️'], 1, h2g, 'Five snowflakes! The group grows by one each time.', true),
       pb(2, next('🌞 🌧️ 🌈 🌞 🌧️ 🌈 🌞'), ['🌈', '🌧️', '🌞', '⛄'], 1, h2, 'Rain! It goes sun, rain, rainbow, again.', true),
+      pb(2, next('🌟 🌟 🌈 🌟 🌟 🌈 🌟 🌟'), ['🌈', '🌟', '☁️', '🌙'], 0, h2, 'Rainbow! The beat is star, star, rainbow.', true),
+      pb(2, next('🐚 🐚🐚 🐚🐚🐚'), ['🐚🐚', '🐚🐚🐚🐚', '🐚', '🐚🐚🐚🐚🐚'], 1, h2g, 'Four shells! The group grows by one each time.', true),
     ],
     3: [
       pb(3, next('2, 4, 6, 8'), ['10', '9', '11', '12'], 0, h3, '10 comes next — the numbers count up by 2.'),
@@ -1560,6 +1641,8 @@ const PatternsBank = (() => {
       pb(3, next('15, 14, 13, 12'), ['11', '10', '13', '9'], 0, h3, '11 comes next — the numbers count down by 1.'),
       pb(3, next('10, 12, 14, 16'), ['17', '19', '18', '20'], 2, h3, '18 comes next — the numbers count up by 2.'),
       pb(3, next('5, 15, 25, 35'), ['44', '55', '46', '45'], 3, h3, '45 comes next — the numbers count up by 10.'),
+      pb(3, next('4, 6, 8, 10'), ['12', '11', '14', '13'], 0, h3, '12 comes next — the numbers count up by 2.'),
+      pb(3, next('6, 16, 26, 36'), ['44', '46', '45', '56'], 1, h3, '46 comes next — the numbers count up by 10.'),
     ],
     4: [
       pb(4, 'Kitten is to cat as puppy is to … ?', ['bone', 'dog', 'bark', 'tail'], 1, h4, 'Dog! A puppy grows into a dog.'),
@@ -1572,6 +1655,8 @@ const PatternsBank = (() => {
       pb(4, 'Car is to road as train is to … ?', ['wheel', 'horn', 'track', 'station'], 2, h4, 'Track! A train travels on a track.'),
       pb(4, 'Winter is to cold as summer is to … ?', ['hot', 'snow', 'beach', 'rain'], 0, h4, 'Hot! Winter feels cold and summer feels hot.'),
       pb(4, 'Caterpillar is to butterfly as tadpole is to … ?', ['pond', 'frog', 'fish', 'hop'], 1, h4, 'Frog! A tadpole grows into a frog.'),
+      pb(4, 'Moon is to night as sun is to … ?', ['day', 'rain', 'snow', 'wind'], 0, h4, 'Day! The moon shines at night, the sun by day.'),
+      pb(4, 'Boat is to water as plane is to … ?', ['air', 'wing', 'pilot', 'wheel'], 0, h4, 'Air! A plane travels through the air.'),
     ],
     5: [
       pb(5, odd, ['red', 'blue', 'green', 'seven'], 3, h5o, 'Seven is a number — the rest are colors.'),
@@ -1585,6 +1670,8 @@ const PatternsBank = (() => {
       pb(5, next('2, 4, 8, 16'), ['32', '24', '20', '18'], 0, h5d, '32 comes next — each number doubles.'),
       pb(5, next('1, 2, 4, 8'), ['12', '16', '10', '9'], 1, h5d, '16 comes next — each number doubles.'),
       pb(5, next('3, 6, 12, 24'), ['30', '27', '48', '36'], 2, h5d, '48 comes next — each number doubles: 24 plus 24.'),
+      pb(5, odd, ['violin', 'drum', 'flute', 'ladder'], 3, h5o, 'A ladder is not an instrument.'),
+      pb(5, next('5, 10, 20, 40'), ['70', '60', '80', '45'], 2, h5d, '80 comes next — each number doubles: 40 plus 40.'),
     ],
   };
 })();
@@ -1953,6 +2040,92 @@ const ReadingBank = (() => {
     ['they were planning a party', 'they did not hear the bell', 'they got lost in the woods', 'they ate at home'], 0,
     hTwist, 'Her friends were planning a surprise party.');
 
+  // ---- Starlight Kingdom passages (world 2) ----
+  // ---- Tier 1: two sentences, literal questions ----
+  const p41 = 'Wisp the wolf sang to the round moon. The stars blinked along like tiny lights.';
+  rd(1, p41, 'Who sang to the moon?',
+    ['Wisp the wolf', 'a tiny star', 'Pip the parrot'], 0,
+    hLook, 'Wisp the wolf sang to the round moon.');
+  rd(1, p41, 'What did the stars do?',
+    ['blinked', 'sang loudly', 'fell down'], 0,
+    hLook, 'The stars blinked like tiny lights.');
+
+  const p42 = 'Charlie did a handstand on the soft sand. Splash the dolphin clapped her flippers.';
+  rd(1, p42, 'What did Charlie do?',
+    ['a handstand', 'a big splash', 'a sandy dig'], 0,
+    hLook, 'Charlie did a handstand on the soft sand.');
+  rd(1, p42, 'Who clapped her flippers?',
+    ['Splash', 'Charlie', 'a soft crab'], 0,
+    hLook, 'Splash the dolphin clapped her flippers.');
+
+  // ---- Tier 2: three sentences, detail questions ----
+  const p43 = 'Comet the goat climbed the tallest cliff. He found three glowing stones at the top. He carried them home in his little pack.';
+  rd(2, p43, 'How many stones did Comet find?',
+    ['three stones', 'seven stones', 'five stones', 'nine stones'], 0,
+    hDetail, 'He found three glowing stones at the top.');
+  rd(2, p43, 'Where did Comet put the stones?',
+    ['in his pack', 'on the tall cliff', 'under a bush', 'in the sea'], 0,
+    hDetail, 'He carried them home in his little pack.');
+
+  const p44 = 'Stella the llama knits scarves from starry wool. She made one for every friend on the cliffs. The scarves glow softly in the dark.';
+  rd(2, p44, 'What does Stella knit?',
+    ['scarves', 'star hats', 'blankets', 'mittens'], 0,
+    hDetail, 'Stella knits scarves from starry wool.');
+  rd(2, p44, 'What do the scarves do in the dark?',
+    ['glow softly', 'itch a little', 'turn to wool', 'float away'], 0,
+    hDetail, 'The scarves glow softly in the dark.');
+
+  // ---- Tier 3: 4-5 sentences, sequence / main idea ----
+  const p45 = 'Charlie explored the Mirror Maze with Shadow the cat. First they turned left at the silver arch. Next they tiptoed past nine shining mirrors. At last they found the door, and it opened with a happy chime.';
+  rd(3, p45, 'What did they do first?',
+    ['turned left at the arch', 'tiptoed past the mirrors', 'found the door', 'heard a happy chime'], 0,
+    hOrder, 'First they turned left at the silver arch.');
+  rd(3, p45, 'What is this story mostly about?',
+    ['a trip through the maze', 'how mirrors get so shiny', 'a happy little chime', 'a door that stays closed'], 0,
+    hMain, 'It is about a trip through the Mirror Maze.');
+
+  const p46 = 'Beacon the whale collects stories for the lighthouse. First he listens to the sailors sing. Then he sprays each story high into the sky. The lighthouse catches every story in its bright beam, and Pip reads them aloud at night.';
+  rd(3, p46, 'What does Beacon do first?',
+    ['listens to the sailors', 'sprays stories skyward', 'reads them aloud', 'lights the bright beam'], 0,
+    hOrder, 'First he listens to the sailors sing.');
+  rd(3, p46, 'Who reads the stories aloud?',
+    ['Pip', 'Beacon', 'a sailor', 'the whale'], 0,
+    hLook, 'Pip reads them aloud at night.');
+
+  // ---- Tier 4: inference ----
+  const p47 = 'Boulder the ram stared at the wide, dark gap between the cliffs. He backed up slowly, pawing the ground. Then he thought of Charlie cheering his name, ran fast, and leaped all the way across.';
+  rd(4, p47, 'How did Boulder feel at first?',
+    ['unsure', 'sleepy', 'joyful', 'itchy'], 0,
+    hFeel, 'Backing up slowly shows he felt unsure.');
+  rd(4, p47, 'What helped Boulder leap across?',
+    ['thinking of Charlie', 'a strong cliff wind', 'a wooden bridge', 'a magic rope'], 0,
+    hClue, 'He thought of Charlie cheering his name.');
+
+  const p48 = 'Marina the seal hid a shiny pebble behind her back. She giggled every time Sandy walked past. When Sandy finally found it, Marina barked a happy laugh and gave it to her friend.';
+  rd(4, p48, 'What was Marina doing?',
+    ['playing a game', 'taking a nap', 'feeling grumpy', 'looking for food'], 0,
+    hClue, 'Hiding and giggling show she was playing.');
+  rd(4, p48, 'How do you know Marina felt happy?',
+    ['her giggle and laugh', 'she hid behind a rock', 'she walked slowly past', 'she gave a grumpy bark'], 0,
+    hClue, 'Her giggle and happy laugh show joy.');
+
+  // ---- Tier 5: vocabulary in context, twist endings ----
+  const p49 = 'Plume the peacock showed Charlie the deepest room of the maze, where the walls shimmered — they sparkled and danced with light. One mirror was different from all the rest. Instead of showing Charlie, it showed a sunny meadow. It was not a mirror at all — it was the door out.';
+  rd(5, p49, "What does 'shimmered' mean in this story?",
+    ['sparkled with light', 'showed a sunny meadow', 'grew very tall', 'cracked into tiny pieces'], 0,
+    hVocab, 'Shimmered means sparkled and danced with light.');
+  rd(5, p49, 'What was the different mirror really?',
+    ['the door out', 'a silver wall', 'a painting of stars', 'a sleeping golem'], 0,
+    hTwist, 'It was not a mirror — it was the door out.');
+
+  const p50 = "Rosy the flamingo guarded the lighthouse lamp, which was older than the oldest sailor's tale. One stormy night the lamp flickered out. Rosy stood tall, spread her pink wings, and glowed like a sunrise until every boat found its way home.";
+  rd(5, p50, "What does 'flickered out' mean?",
+    ['the light went off', 'the lamp grew brighter', 'the storm got quiet', 'the boats sailed away'], 0,
+    hVocab, 'Flickered out means the light went off.');
+  rd(5, p50, 'How did the boats find their way home?',
+    ['Rosy lit up the night', 'the lamp turned back on', 'a star fell from the sky', 'a whale pushed them home'], 0,
+    hTwist, 'Rosy glowed like a sunrise until the boats came home.');
+
   return bank;
 })();
 
@@ -2178,7 +2351,10 @@ const Session = (() => {
   const ALL_DOMAINS = ['words', 'rhyme', 'math', 'patterns', 'reading'];
   const LAND_DOMAIN = {
     woods: 'words', reef: 'rhyme', mountains: 'math', palace: 'patterns', summit: 'reading',
+    grove: 'words', lagoon: 'rhyme', cliffs: 'math', maze: 'patterns', lighthouse: 'reading',
   };
+  // Finale lands serve all five domains mixed (8 challenges + 10-question boss).
+  const FINALES = ['castle', 'starcastle'];
 
   function shuffled(list, rng) {
     const a = list.slice();
@@ -2228,7 +2404,7 @@ const Session = (() => {
 
   // ctx: { content, copy, companions, rng, state, missq, seen, streak, save }
   function createRun(ctx, landId) {
-    const isCastle = landId === 'castle';
+    const isCastle = FINALES.indexOf(landId) > -1;
     if (!isCastle && !LAND_DOMAIN[landId]) throw new TypeError('Unknown land: ' + landId);
     const bossTotal = isCastle ? 10 : 5;
     let challengeDomains;
@@ -2496,14 +2672,19 @@ const Session = (() => {
     return { landId, current, submit, advance, hint };
   }
 
-  return { CHALLENGE_COUNT, ALL_DOMAINS, LAND_DOMAIN, serve, shuffleTiles, shuffled, createRun };
+  return { CHALLENGE_COUNT, ALL_DOMAINS, LAND_DOMAIN, FINALES, serve, shuffleTiles, shuffled, createRun };
 })();
 
 // === src/engine/engine.js ===
 
 const Engine = (() => {
   const LAND_ORDER = ['woods', 'reef', 'mountains', 'palace', 'summit'];
-  const ALL_LANDS = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  // World 2 (Starlight Kingdom) opens once the Crystal Castle has a star.
+  const WORLD2_ORDER = ['grove', 'lagoon', 'cliffs', 'maze', 'lighthouse'];
+  const ALL_LANDS = [
+    'woods', 'reef', 'mountains', 'palace', 'summit', 'castle',
+    'grove', 'lagoon', 'cliffs', 'maze', 'lighthouse', 'starcastle',
+  ];
 
   function freshState() {
     const lands = {};
@@ -2562,18 +2743,18 @@ const Engine = (() => {
       state,
       landStatus(landId) {
         const stars = (state.lands[landId] && state.lands[landId].stars) || 0;
+        const starsOf = (id) => (state.lands[id] && state.lands[id].stars) || 0;
+        const allStarred = (order) => order.every((id) => starsOf(id) >= 1);
         if (landId === 'woods') return { unlocked: true, stars };
-        if (landId === 'castle') {
-          let all = true;
-          for (let i = 0; i < LAND_ORDER.length; i++) {
-            if (((state.lands[LAND_ORDER[i]] && state.lands[LAND_ORDER[i]].stars) || 0) < 1) { all = false; break; }
-          }
-          return { unlocked: all, stars };
-        }
+        if (landId === 'castle') return { unlocked: allStarred(LAND_ORDER), stars };
+        // World 2: grove opens after the Crystal Castle; then the chain repeats.
+        if (landId === 'grove') return { unlocked: starsOf('castle') >= 1, stars };
+        if (landId === 'starcastle') return { unlocked: allStarred(WORLD2_ORDER), stars };
+        const w2 = WORLD2_ORDER.indexOf(landId);
+        if (w2 > 0) return { unlocked: starsOf(WORLD2_ORDER[w2 - 1]) >= 1, stars };
         const i = LAND_ORDER.indexOf(landId);
         if (i < 0) return { unlocked: false, stars };
-        const prev = LAND_ORDER[i - 1];
-        return { unlocked: ((state.lands[prev] && state.lands[prev].stars) || 0) >= 1, stars };
+        return { unlocked: starsOf(LAND_ORDER[i - 1]) >= 1, stars };
       },
       setMuted(muted) {
         state.settings.muted = !!muted;
@@ -2616,7 +2797,7 @@ const Engine = (() => {
     return game;
   }
 
-  return { LAND_ORDER, ALL_LANDS, create };
+  return { LAND_ORDER, WORLD2_ORDER, ALL_LANDS, create };
 })();
 
 // === src/audio/audiokit.js ===
@@ -3281,14 +3462,34 @@ const WorldMap = (() => {
     ['#241c58', '#5a4088', '#b06f93'],
     ['#2a2160', '#6d4a9e', '#d98a82'],
   ];
+  // world 2: deep midnight (0 lands freed) to golden starrise (6)
+  const SKY2 = [
+    ['#070618', '#100e2e', '#1c1640'],
+    ['#0a081e', '#161337', '#27194c'],
+    ['#0d0a24', '#1c172e', '#332158'],
+    ['#100c2a', '#241b46', '#403063'],
+    ['#130e30', '#2e2152', '#56406e'],
+    ['#161038', '#3a2a60', '#7a5878'],
+    ['#191240', '#4a3670', '#a87f6e'],
+  ];
+
+  // World 2 reuses the winding-path layout, position by position.
+  const W1_ORDER = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  const W2_ORDER = ['grove', 'lagoon', 'cliffs', 'maze', 'lighthouse', 'starcastle'];
 
   const SPOTS = {
-    woods:     { x: 140, y: 468 },
-    reef:      { x: 352, y: 540 },
-    mountains: { x: 548, y: 446 },
-    palace:    { x: 748, y: 522 },
-    summit:    { x: 882, y: 362 },
-    castle:    { x: 500, y: 188 },
+    woods:      { x: 140, y: 468 },
+    reef:       { x: 352, y: 540 },
+    mountains:  { x: 548, y: 446 },
+    palace:     { x: 748, y: 522 },
+    summit:     { x: 882, y: 362 },
+    castle:     { x: 500, y: 188 },
+    grove:      { x: 140, y: 468 },
+    lagoon:     { x: 352, y: 540 },
+    cliffs:     { x: 548, y: 446 },
+    maze:       { x: 748, y: 522 },
+    lighthouse: { x: 882, y: 362 },
+    starcastle: { x: 500, y: 188 },
   };
 
   function starPts(cx, cy, r) {
@@ -3386,6 +3587,93 @@ const WorldMap = (() => {
     return s;
   }
 
+  // ---- world 2 scenes ----
+  function decorGrove() {
+    let s = islandBase(150, '#2e8b6f', '#3f3357');
+    const tree = (x, sc, cls) =>
+      '<g class="wm-tree ' + cls + '" transform="translate(' + x + ' 0) scale(' + sc + ')">' +
+      '<rect x="-3" y="-12" width="6" height="14" rx="2" fill="#54487e"/>' +
+      '<path d="M0 -58 L20 -26 L-20 -26 Z" fill="#1f8a6e"/>' +
+      '<path d="M0 -44 L24 -8 L-24 -8 Z" fill="#2aa884"/>' +
+      '<circle cx="-7" cy="-32" r="2.6" fill="#ffe9a8"/>' +
+      '</g>';
+    s += tree(-42, 0.9, '') + tree(2, 1.15, 't2') + tree(44, 0.85, 't3');
+    s += '<circle class="wm-snow" cx="-24" cy="-30" r="2.6" fill="#ffe9a8"/>';
+    s += '<circle class="wm-snow s2" cx="18" cy="-46" r="2.2" fill="#fff3c4"/>';
+    s += '<circle class="wm-snow s3" cx="40" cy="-22" r="2.4" fill="#ffe9a8"/>';
+    return s;
+  }
+
+  function decorLagoon() {
+    let s = islandBase(150, '#2f86c9', '#3d5a8e');
+    s += '<ellipse cx="0" cy="-10" rx="52" ry="20" fill="#7cc7f0" opacity="0.5"/>';
+    s += '<ellipse class="wm-halo" cx="22" cy="-14" rx="14" ry="6" fill="#fff7df" opacity="0.55"/>';
+    s += '<path class="wm-wave" d="M-46 -22 Q-32 -30 -18 -22 Q-4 -14 10 -22 Q24 -30 38 -22" fill="none" stroke="#d8f4ff" stroke-width="3.5" stroke-linecap="round" opacity="0.7"/>';
+    s += '<path class="wm-wave w2" d="M-38 -38 Q-26 -45 -14 -38 Q-2 -31 10 -38 Q22 -45 34 -38" fill="none" stroke="#d8f4ff" stroke-width="3" stroke-linecap="round" opacity="0.5"/>';
+    s += '<ellipse cx="-26" cy="-6" rx="11" ry="4.5" fill="#3fae8c"/>';
+    s += '<circle cx="-26" cy="-9" r="3" fill="#f0abfc"/>';
+    s += '<circle cx="30" cy="-30" r="3" fill="#f7f5ff" opacity="0.9"/>';
+    return s;
+  }
+
+  function decorCliffs() {
+    let s = islandBase(156, '#8d7ac9', '#5a4a8f');
+    s += '<path d="M-58 -2 L-26 -58 L4 -2 Z" fill="#9b8ad4"/>';
+    s += '<path d="M-38 -36 L-26 -58 L-14 -36 L-20 -30 L-26 -38 L-32 -30 Z" fill="#f3f0ff"/>';
+    s += '<path d="M-14 -2 L26 -76 L62 -2 Z" fill="#b3a4e8"/>';
+    s += '<path d="M12 -50 L26 -76 L40 -50 L32 -42 L26 -52 L20 -42 Z" fill="#ffffff"/>';
+    s += '<g class="wm-facet"><circle cx="-40" cy="-78" r="5" fill="#ffd166"/>' +
+      '<path d="M-40 -78 Q-18 -88 6 -96" fill="none" stroke="#ffe9a8" stroke-width="3" stroke-linecap="round" opacity="0.8"/></g>';
+    s += '<circle class="wm-snow" cx="-2" cy="-44" r="2.4" fill="#ffe9a8"/>';
+    s += '<circle class="wm-snow s2" cx="44" cy="-30" r="2.2" fill="#fff3c4"/>';
+    return s;
+  }
+
+  function decorMaze() {
+    let s = islandBase(150, '#b07ad8', '#6d4a9e');
+    const arch = (x, h, w, c, cls) =>
+      '<path d="M' + (x - w / 2) + ' -4 L' + (x - w / 2) + ' ' + (-h + w / 2) +
+      ' Q' + (x - w / 2) + ' ' + -h + ' ' + x + ' ' + -h +
+      ' Q' + (x + w / 2) + ' ' + -h + ' ' + (x + w / 2) + ' ' + (-h + w / 2) +
+      ' L' + (x + w / 2) + ' -4 Z" fill="' + c + '"/>' +
+      '<path class="wm-facet ' + cls + '" d="M' + (x - w / 4) + ' -4 L' + (x - w / 4) + ' ' + (-h + 6) +
+      ' L' + (x + w / 8) + ' ' + (-h + 10) + ' L' + (x + w / 8) + ' -4 Z" fill="#f4f1ff" opacity="0.55"/>';
+    s += arch(-36, 46, 24, '#d9b8f5', '');
+    s += arch(0, 64, 28, '#ecd2ff', 'f2');
+    s += arch(36, 42, 22, '#cfa6ef', 'f3');
+    s += '<circle cx="0" cy="-72" r="3.5" fill="#7ef0e2"/>';
+    return s;
+  }
+
+  function decorLighthouse() {
+    let s = '<ellipse class="wm-halo" cx="0" cy="-58" rx="78" ry="54" fill="#ffd166" opacity="0.2"/>';
+    s += islandBase(146, '#3a6fa8', '#2d4a78');
+    s += '<path d="M-14 -4 L-9 -64 L9 -64 L14 -4 Z" fill="#f3f0ff"/>';
+    s += '<path d="M-12 -18 L12 -18 L13 -8 L-13 -8 Z" fill="#ff8e7a"/>';
+    s += '<path d="M-10 -44 L10 -44 L11 -32 L-11 -32 Z" fill="#ff8e7a"/>';
+    s += '<rect x="-8" y="-76" width="16" height="12" rx="3" fill="#33254f"/>';
+    s += '<circle class="wm-facet" cx="0" cy="-70" r="5" fill="#ffd166"/>';
+    s += '<path class="wm-facet f2" d="M6 -74 L54 -86 L54 -56 Z" fill="#ffe9a8" opacity="0.4"/>';
+    s += '<path class="wm-facet f3" d="M-6 -74 L-54 -86 L-54 -56 Z" fill="#ffe9a8" opacity="0.35"/>';
+    s += '<circle cx="-30" cy="-20" r="2.4" fill="#fff7df"/><circle cx="32" cy="-26" r="2.2" fill="#fff7df"/>';
+    return s;
+  }
+
+  function decorStarcastle() {
+    let s = '<ellipse class="wm-halo" cx="0" cy="-44" rx="96" ry="66" fill="#ffd166" opacity="0.22"/>';
+    s += islandBase(190, '#f2d98c', '#8f6fb0');
+    const tower = (x, h, w, c, cls) =>
+      '<rect x="' + (x - w / 2) + '" y="' + -h + '" width="' + w + '" height="' + (h - 4) + '" rx="4" fill="' + c + '"/>' +
+      '<path d="M' + (x - w / 2 - 3) + ' ' + -h + ' L' + x + ' ' + (-h - 20) + ' L' + (x + w / 2 + 3) + ' ' + -h + ' Z" fill="#f0abfc"/>' +
+      '<path class="wm-facet ' + cls + '" d="M' + x + ' ' + (-h - 20) + ' L' + x + ' ' + -h + ' L' + (x + w / 2 + 3) + ' ' + -h + ' Z" fill="#fff7df" opacity="0.65"/>';
+    s += tower(-46, 56, 22, '#ffe9a8', '');
+    s += tower(46, 56, 22, '#ffe9a8', 'f3');
+    s += tower(0, 84, 34, '#fff3c4', 'f2');
+    s += '<rect x="-10" y="-34" width="20" height="28" rx="9" fill="#33254f" opacity="0.55"/>';
+    s += '<polygon points="' + starPts(0, -116, 12) + '" fill="#ffd166" stroke="#fff3c4" stroke-width="2"/>';
+    return s;
+  }
+
   const DECOR = {
     woods: decorWoods,
     reef: decorReef,
@@ -3393,6 +3681,12 @@ const WorldMap = (() => {
     palace: decorPalace,
     summit: decorSummit,
     castle: decorCastle,
+    grove: decorGrove,
+    lagoon: decorLagoon,
+    cliffs: decorCliffs,
+    maze: decorMaze,
+    lighthouse: decorLighthouse,
+    starcastle: decorStarcastle,
   };
 
   function lockIcon() {
@@ -3422,7 +3716,7 @@ const WorldMap = (() => {
     if (!spot) return '';
     const state = land.stars > 0 ? 'done' : land.unlocked ? 'open' : 'locked';
     const decor = DECOR[land.id] ? DECOR[land.id]() : '';
-    const big = land.id === 'castle';
+    const big = land.id === 'castle' || land.id === 'starcastle';
     return (
       '<g class="wm-land' + (isNext ? ' wm-next' : '') + '" data-land="' + land.id + '" data-state="' + state +
       '" role="button" aria-label="' + land.name + '" transform="translate(' + spot.x + ' ' + spot.y + ')">' +
@@ -3462,8 +3756,7 @@ const WorldMap = (() => {
     return s;
   }
 
-  function windingPath() {
-    const order = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  function windingPath(order) {
     let d = '';
     for (let i = 0; i < order.length; i++) {
       const p = SPOTS[order[i]];
@@ -3480,14 +3773,15 @@ const WorldMap = (() => {
   }
 
   function render(container, view, onSelectLand) {
-    const warmth = Math.max(0, Math.min(SKY.length - 1, view.completedCount | 0));
-    const sky = SKY[warmth];
+    const ramp = view.world === 2 ? SKY2 : SKY;
+    const warmth = Math.max(0, Math.min(ramp.length - 1, view.completedCount | 0));
+    const sky = ramp[warmth];
     container.style.background =
       'linear-gradient(180deg, ' + sky[0] + ' 0%, ' + sky[1] + ' 52%, ' + sky[2] + ' 100%)';
 
     let svg = '<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-label="Kingdom map">';
     svg += skyBits();
-    svg += windingPath();
+    svg += windingPath(view.world === 2 ? W2_ORDER : W1_ORDER);
     for (const land of view.lands) {
       svg += landGroup(land, view.highlight === land.id);
     }
@@ -3626,19 +3920,25 @@ const Screens = (() => {
       '<div class="title-gem">💎</div>' +
       '<h1 class="game-title"><span><span class="title-spark">✦</span> Charlie&#39;s <span class="title-spark">✦</span></span>' +
       '<span class="grad">Crystal Kingdom</span></h1>' +
-      '<p class="title-sub">A tumbling quest through five floating lands</p>' +
+      '<p class="title-sub">A tumbling quest through two floating kingdoms</p>' +
       '<button class="btn btn-play" data-action="play" data-press>Play</button>' +
       '</section>';
   }
 
   // ---------- map shell (WorldMap paints into [data-worldmap]) ----------
   function map(el, opts) {
+    const o = opts || {};
+    const title = o.title || 'Charlie&#39;s Crystal Kingdom';
+    const travel = o.travel
+      ? '<button class="btn btn-ghost btn-travel" data-action="travel" data-press>' + o.travel + '</button>'
+      : '';
     el.innerHTML =
       '<section class="screen screen-map">' +
       '<div class="map-stage" data-worldmap></div>' +
       '<header class="map-top">' +
-      '<h1 class="map-title">Charlie&#39;s Crystal Kingdom</h1>' +
+      '<h1 class="map-title">' + title + '</h1>' +
       '<div class="map-actions">' +
+      travel +
       '<button class="btn btn-ghost" data-action="friends" data-press>🦊 Friends</button>' +
       '<button class="btn btn-ghost" data-action="settings" data-press aria-label="Settings">⚙️</button>' +
       '</div></header>' +
@@ -3662,7 +3962,7 @@ const Screens = (() => {
       let cls = 'dot';
       if (i < nowAt) cls += ' done';
       else if (i === nowAt) cls += ' now';
-      if (cur.phase === 'challenge' && ctx.landId !== 'castle' && (i === 3 || i === 6)) cls += ' dot-egg';
+      if (cur.phase === 'challenge' && !ctx.isFinale && (i === 3 || i === 6)) cls += ' dot-egg';
       s += '<span class="' + cls + '"></span>';
     }
     return s + '</div>';
@@ -3982,10 +4282,14 @@ const Screens = (() => {
 
 
 const Main = (() => {
-  const LAND_ORDER = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  const WORLD1 = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  const WORLD2 = ['grove', 'lagoon', 'cliffs', 'maze', 'lighthouse', 'starcastle'];
+  const FINALE_IDS = ['castle', 'starcastle'];
   const LAND_NAMES = {
     woods: 'Word Woods', reef: 'Rhyme Reef', mountains: 'Number Mountains',
     palace: 'Pattern Palace', summit: 'Story Summit', castle: 'Crystal Castle',
+    grove: 'Starlight Grove', lagoon: 'Echo Lagoon', cliffs: 'Comet Cliffs',
+    maze: 'Mirror Maze', lighthouse: 'Legend Lighthouse', starcastle: 'Star Castle',
   };
 
   let app = null;
@@ -3993,6 +4297,8 @@ const Main = (() => {
   let run = null;
   let screen = 'title';
   let landId = null;
+  let world = 1;             // which kingdom map is showing (1 or 2)
+  let newWorldToast = false; // one-shot nudge after the Crystal Castle falls
   let curView = null;        // latest run.current()
   let bossHits = 0;
   let bossIntroShown = false;
@@ -4155,6 +4461,7 @@ const Main = (() => {
     else if (action === 'leave-stay') closeLeaveConfirm(true);
     else if (action === 'leave-go') { closeLeaveConfirm(); clearTimers(); run = null; showMap(); }
     else if (action === 'friends') showCollection();
+    else if (action === 'travel') { world = world === 1 ? 2 : 1; showMap(); }
     else if (action === 'settings') openSettings();
     else if (action === 'close-settings') closeSettings();
     else if (action === 'toggle-mute') toggleMute(btn);
@@ -4171,8 +4478,8 @@ const Main = (() => {
     Screens.title(app);
   }
 
-  function nextLandHighlight() {
-    for (const id of LAND_ORDER) {
+  function nextLandHighlight(order) {
+    for (const id of order) {
       const st = game.landStatus(id);
       if (st.unlocked && st.stars === 0) return id;
     }
@@ -4184,15 +4491,27 @@ const Main = (() => {
     run = null;
     screen = 'map';
     app.removeAttribute('data-land');
-    Screens.map(app);
+    const order = world === 2 ? WORLD2 : WORLD1;
+    // the Starlight Kingdom appears once the Crystal Castle has a star
+    const world2Open = game.landStatus('grove').unlocked;
+    Screens.map(app, {
+      title: world === 2 ? 'Charlie&#39;s Starlight Kingdom' : 'Charlie&#39;s Crystal Kingdom',
+      travel: world === 2 ? '💎 Crystal Kingdom' : (world2Open ? '🌠 Starlight Kingdom' : ''),
+    });
     const container = app.querySelector('[data-worldmap]');
-    const lands = LAND_ORDER.map((id) => {
+    const lands = order.map((id) => {
       const st = game.landStatus(id);
       return { id, name: landName(id), unlocked: st.unlocked, stars: st.stars };
     });
     const completedCount = lands.filter((l) => l.stars > 0).length;
-    const hl = highlight === undefined ? nextLandHighlight() : highlight;
-    WorldMap.render(container, { lands, completedCount, highlight: hl }, startLand);
+    const hl = highlight === undefined ? nextLandHighlight(order) : highlight;
+    WorldMap.render(container, { lands, completedCount, highlight: hl, world }, startLand);
+    // once per app load: point at the travel button while world 2 is untouched
+    if (world === 1 && world2Open && !newWorldToast
+      && WORLD2.every((id) => game.landStatus(id).stars === 0)) {
+      newWorldToast = true;
+      try { Juice.toast('🌠 A new kingdom appears in the stars!', 3500); } catch (e) { /* toast only */ }
+    }
   }
 
   function showCollection() {
@@ -4251,6 +4570,7 @@ const Main = (() => {
     }
     clearTimers();
     landId = id;
+    world = WORLD2.indexOf(id) > -1 ? 2 : 1;
     bossHits = 0;
     bossIntroShown = false;
     originalsDone = 0;
@@ -4281,7 +4601,13 @@ const Main = (() => {
       // two sentences need a longer hold than the default toast
       try { Juice.toast(Copy.bossIntro(landId), 3500); } catch (e) { /* keep playing */ }
     }
-    Screens.challenge(app, cur, { landId, landName: landName(landId), bossHits, muted: isMuted() });
+    Screens.challenge(app, cur, {
+      landId,
+      landName: landName(landId),
+      bossHits,
+      muted: isMuted(),
+      isFinale: FINALE_IDS.indexOf(landId) > -1,
+    });
     Avatar.mount(app.querySelector('[data-avatar]'));
   }
 
