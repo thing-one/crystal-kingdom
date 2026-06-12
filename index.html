@@ -243,6 +243,65 @@ button {
 }
 .map-actions { display: flex; gap: 12px; }
 
+/* companion cheerleader beside the avatar */
+.cheer {
+  font-size: 44px;
+  line-height: 1;
+  text-align: center;
+  margin-top: 6px;
+  filter: drop-shadow(0 4px 10px rgba(8, 6, 30, 0.4));
+}
+.cheer.cheer-bounce { animation: cck-cheer-bounce 0.9s ease; }
+.cheer.cheer-peek { animation: cck-cheer-peek 0.8s ease; }
+@keyframes cck-cheer-bounce {
+  0%   { transform: translateY(0) scale(1); }
+  30%  { transform: translateY(-26px) scale(1.15); }
+  55%  { transform: translateY(0) scale(0.94, 0.88); }
+  75%  { transform: translateY(-9px) scale(1.04); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes cck-cheer-peek {
+  0%   { transform: rotate(0); }
+  30%  { transform: rotate(-14deg) translateY(2px); }
+  70%  { transform: rotate(10deg); }
+  100% { transform: rotate(0); }
+}
+
+/* wardrobe swatches in settings */
+.wardrobe-title { margin-bottom: -4px; }
+.wardrobe { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+.swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 8px 6px;
+  border: 2px solid transparent;
+  border-radius: 16px;
+  background: var(--glass);
+  color: var(--white);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+}
+.swatch-chip {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 2px solid var(--glass-edge);
+}
+.swatch.current { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(255, 209, 102, 0.3); }
+.swatch.locked { opacity: 0.55; }
+
+/* grown-up peek */
+.parent-peek {
+  border-top: 1px solid var(--glass-edge);
+  padding-top: 8px;
+  text-align: left;
+}
+
 /* balloon dock on the map */
 .wm-balloon { cursor: pointer; }
 .wm-balloon .wm-float { animation: cck-island-float 5.2s ease-in-out infinite; }
@@ -870,6 +929,7 @@ button {
     to   { opacity: 1; }
   }
   .title-gem, .btn-play, .game-title .grad, .cele-title, .btn-travel,
+  .cheer.cheer-bounce, .cheer.cheer-peek,
   .wm-cloud, .wm-skystar, .wm-aurora, .wm-path, .wm-balloon .wm-float,
   .wm-land .wm-float, .wm-tree, .wm-wave, .wm-snow, .wm-facet, .wm-halo,
   .wm-land[data-state='done'] .wm-doneglow, .wm-land.wm-next .wm-ring,
@@ -2750,7 +2810,7 @@ const Engine = (() => {
       abilities: Object.assign({}, Adaptive.START),
       lands,
       companions: [],
-      settings: { muted: false },
+      settings: { muted: false, look: 'crystal' },
     };
   }
 
@@ -2775,6 +2835,9 @@ const Engine = (() => {
     }
     if (loaded.settings && typeof loaded.settings.muted === 'boolean') {
       s.settings.muted = loaded.settings.muted;
+    }
+    if (loaded.settings && typeof loaded.settings.look === 'string' && loaded.settings.look) {
+      s.settings.look = loaded.settings.look;
     }
     return s;
   }
@@ -2816,6 +2879,12 @@ const Engine = (() => {
       setMuted(muted) {
         state.settings.muted = !!muted;
         game.save();
+      },
+      setLook(look) {
+        if (typeof look === 'string' && look) {
+          state.settings.look = look;
+          game.save();
+        }
       },
       save() {
         try {
@@ -3064,6 +3133,34 @@ const AudioKit = (() => {
     bossHit: akPlayBossHit,
   };
 
+  // ---- per-land arrival motifs ---------------------------------------------
+  // A short signature phrase on entering each land: [freq, atOffset, dur, type].
+  // Soft peaks — these greet, they don't announce.
+  const AK_MOTIFS = {
+    woods:      [[392.0, 0, 0.18], [329.63, 0.14, 0.18], [392.0, 0.28, 0.18], [440.0, 0.44, 0.3]],
+    reef:       [[261.63, 0, 0.26, 'sine'], [329.63, 0.18, 0.26, 'sine'], [392.0, 0.36, 0.3, 'sine'], [329.63, 0.58, 0.34, 'sine']],
+    mountains:  [[261.63, 0, 0.3], [392.0, 0.22, 0.3], [523.25, 0.44, 0.42]],
+    palace:     [[261.63, 0, 0.13], [329.63, 0.1, 0.13], [392.0, 0.2, 0.13], [523.25, 0.3, 0.16], [392.0, 0.42, 0.22]],
+    summit:     [[392.0, 0, 0.16], [523.25, 0.13, 0.16], [659.26, 0.26, 0.36]],
+    castle:     [[659.26, 0, 0.2, 'sine'], [783.99, 0.14, 0.2, 'sine'], [1046.5, 0.28, 0.4, 'sine']],
+    grove:      [[440.0, 0, 0.2, 'sine'], [523.25, 0.15, 0.2, 'sine'], [493.88, 0.3, 0.2, 'sine'], [659.26, 0.46, 0.32, 'sine']],
+    lagoon:     [[329.63, 0, 0.3, 'sine'], [392.0, 0.24, 0.3, 'sine'], [440.0, 0.48, 0.3, 'sine'], [392.0, 0.72, 0.36, 'sine']],
+    cliffs:     [[261.63, 0, 0.12], [293.66, 0.1, 0.12], [329.63, 0.2, 0.12], [392.0, 0.3, 0.28]],
+    maze:       [[523.25, 0, 0.12, 'sine'], [493.88, 0.1, 0.12, 'sine'], [523.25, 0.2, 0.12, 'sine'], [659.26, 0.3, 0.26, 'sine']],
+    lighthouse: [[196.0, 0, 0.34], [261.63, 0.26, 0.34], [329.63, 0.52, 0.46]],
+    starcastle: [[523.25, 0, 0.16], [659.26, 0.12, 0.16], [783.99, 0.24, 0.16], [1046.5, 0.36, 0.42, 'sine']],
+  };
+
+  function akPlayMotif(landId) {
+    const seq = AK_MOTIFS[landId];
+    if (!seq) return;
+    const t = akNow();
+    for (let i = 0; i < seq.length; i++) {
+      const n = seq[i];
+      akTone({ freq: n[0], type: n[3] || 'triangle', at: t + n[1], dur: n[2], peak: 0.1, attack: 0.015 });
+    }
+  }
+
   // ---- public API (every function is throw-proof) --------------------------
 
   return {
@@ -3093,6 +3190,15 @@ const AudioKit = (() => {
         if (akCtx.state !== 'running') return;
         const fn = akSounds[name];
         if (fn) fn();
+      } catch (e) { /* never throws */ }
+    },
+
+    motif(landId) {
+      try {
+        if (akMuted) return;
+        if (!akCtx || !akMaster) return;
+        if (akCtx.state !== 'running') return;
+        akPlayMotif(landId);
       } catch (e) { /* never throws */ }
     },
 
@@ -3881,11 +3987,12 @@ const WorldMap = (() => {
 
 // === src/ui/avatar.js ===
 // Avatar — SVG gymnast with ponytail and gradient leotard.
-// Avatar.mount(el) injects the rig; Avatar.trick(streakN) plays a CSS-keyframe
-// trick that varies with streak length; Avatar.idle() returns to the idle bob.
+// Avatar.mount(el, lookKey) injects the rig in the chosen leotard;
+// Avatar.trick(streakN) plays a CSS-keyframe trick that varies with streak
+// length; Avatar.idle() returns to the idle bob.
 // Reduced motion: CSS swaps every trick for a gentle bounce (styles.css).
 // Note: SVG paint-server references are not allowed by the build rules, so the
-// leotard "gradient" is layered solid fills (violet -> sea -> teal).
+// leotard "gradient" is layered solid fills (top -> mid -> low).
 
 const Avatar = (() => {
   let rigEl = null;
@@ -3895,49 +4002,62 @@ const Avatar = (() => {
   const TRICKS = ['av-cartwheel', 'av-flip', 'av-stuck'];
   const TRICK_MS = { 'av-cartwheel': 1050, 'av-flip': 1100, 'av-stuck': 1400 };
 
-  const SVG = [
-    '<svg viewBox="0 0 120 170" role="img" aria-label="Charlie the gymnast">',
-    '<g class="av-rig av-idle">',
-    // ponytail (behind the head, swings)
-    '<g class="av-pony">',
-    '<path d="M76 26 Q98 30 96 56 Q94 74 84 80 Q90 60 80 46 Q74 36 72 32 Z" fill="#6b4226"/>',
-    '<circle cx="77" cy="29" r="5" fill="#ffd166"/>',
-    '</g>',
-    // head + hair
-    '<circle cx="60" cy="34" r="17" fill="#f2c39b"/>',
-    '<path d="M43 32 Q44 14 60 14 Q76 14 77 32 Q70 22 60 22 Q50 22 43 32 Z" fill="#7a4a2b"/>',
-    // face
-    '<circle cx="54" cy="34" r="2.4" fill="#33254f"/>',
-    '<circle cx="66" cy="34" r="2.4" fill="#33254f"/>',
-    '<path d="M53 42 Q60 48 67 42" fill="none" stroke="#b3604a" stroke-width="2.6" stroke-linecap="round"/>',
-    '<circle cx="49" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
-    '<circle cx="71" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
-    // arms raised in a V (gymnast salute)
-    '<path d="M46 62 Q32 50 26 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
-    '<path d="M74 62 Q88 50 94 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
-    // leotard torso — layered fills fake a violet-to-teal gradient
-    '<path d="M46 56 Q60 50 74 56 L78 92 Q60 102 42 92 Z" fill="#8b5cf6"/>',
-    '<path d="M44.5 74 Q60 70 75.5 74 L78 92 Q60 102 42 92 Z" fill="#56a8d6" opacity="0.85"/>',
-    '<path d="M43.4 84 Q60 80 76.7 84 L78 92 Q60 102 42 92 Z" fill="#2dd4bf" opacity="0.95"/>',
-    // legs
-    '<path d="M50 96 L46 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
-    '<path d="M70 96 L74 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
-    // slippers
-    '<ellipse cx="45" cy="145" rx="8" ry="4.5" fill="#a78bfa"/>',
-    '<ellipse cx="75" cy="145" rx="8" ry="4.5" fill="#a78bfa"/>',
-    // leotard sparkles
-    '<circle cx="55" cy="66" r="2" fill="#ffe9a8"/>',
-    '<circle cx="66" cy="78" r="1.7" fill="#ffe9a8"/>',
-    '<circle cx="60" cy="88" r="1.4" fill="#f7f5ff"/>',
-    '</g>',
-    '</svg>',
-  ].join('');
+  // Wardrobe looks, unlocked by shining 3 stars on lands (see main.js).
+  // Each look: layered leotard fills + slipper color.
+  const LOOKS = {
+    crystal:  { name: 'Crystal',  top: '#8b5cf6', mid: '#56a8d6', low: '#2dd4bf', slip: '#a78bfa' },
+    sunset:   { name: 'Sunset',   top: '#ff8e7a', mid: '#f9a8d4', low: '#ffd166', slip: '#ff8e7a' },
+    meadow:   { name: 'Meadow',   top: '#4ade80', mid: '#2dd4bf', low: '#a3e635', slip: '#4ade80' },
+    midnight: { name: 'Midnight', top: '#818cf8', mid: '#a78bfa', low: '#f0abfc', slip: '#818cf8' },
+    gold:     { name: 'Gold',     top: '#ffd166', mid: '#ffb3a3', low: '#ffe9a8', slip: '#ffd166' },
+  };
 
-  function mount(el) {
+  function svgFor(lookKey) {
+    const L = LOOKS[lookKey] || LOOKS.crystal;
+    return [
+      '<svg viewBox="0 0 120 170" role="img" aria-label="Charlie the gymnast">',
+      '<g class="av-rig av-idle">',
+      // ponytail (behind the head, swings)
+      '<g class="av-pony">',
+      '<path d="M76 26 Q98 30 96 56 Q94 74 84 80 Q90 60 80 46 Q74 36 72 32 Z" fill="#6b4226"/>',
+      '<circle cx="77" cy="29" r="5" fill="#ffd166"/>',
+      '</g>',
+      // head + hair
+      '<circle cx="60" cy="34" r="17" fill="#f2c39b"/>',
+      '<path d="M43 32 Q44 14 60 14 Q76 14 77 32 Q70 22 60 22 Q50 22 43 32 Z" fill="#7a4a2b"/>',
+      // face
+      '<circle cx="54" cy="34" r="2.4" fill="#33254f"/>',
+      '<circle cx="66" cy="34" r="2.4" fill="#33254f"/>',
+      '<path d="M53 42 Q60 48 67 42" fill="none" stroke="#b3604a" stroke-width="2.6" stroke-linecap="round"/>',
+      '<circle cx="49" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
+      '<circle cx="71" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
+      // arms raised in a V (gymnast salute)
+      '<path d="M46 62 Q32 50 26 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
+      '<path d="M74 62 Q88 50 94 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
+      // leotard torso — layered fills fake a top-to-low gradient
+      '<path d="M46 56 Q60 50 74 56 L78 92 Q60 102 42 92 Z" fill="' + L.top + '"/>',
+      '<path d="M44.5 74 Q60 70 75.5 74 L78 92 Q60 102 42 92 Z" fill="' + L.mid + '" opacity="0.85"/>',
+      '<path d="M43.4 84 Q60 80 76.7 84 L78 92 Q60 102 42 92 Z" fill="' + L.low + '" opacity="0.95"/>',
+      // legs
+      '<path d="M50 96 L46 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
+      '<path d="M70 96 L74 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
+      // slippers
+      '<ellipse cx="45" cy="145" rx="8" ry="4.5" fill="' + L.slip + '"/>',
+      '<ellipse cx="75" cy="145" rx="8" ry="4.5" fill="' + L.slip + '"/>',
+      // leotard sparkles
+      '<circle cx="55" cy="66" r="2" fill="#ffe9a8"/>',
+      '<circle cx="66" cy="78" r="1.7" fill="#ffe9a8"/>',
+      '<circle cx="60" cy="88" r="1.4" fill="#f7f5ff"/>',
+      '</g>',
+      '</svg>',
+    ].join('');
+  }
+
+  function mount(el, lookKey) {
     if (!el) return;
     hostEl = el;
     el.classList.add('avatar');
-    el.innerHTML = SVG;
+    el.innerHTML = svgFor(lookKey);
     rigEl = el.querySelector('.av-rig');
     idle();
   }
@@ -3979,7 +4099,7 @@ const Avatar = (() => {
     return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
   }
 
-  return { mount, trick, idle, center };
+  return { mount, trick, idle, center, LOOKS };
 })();
 
 // === src/ui/screens.js ===
@@ -4132,7 +4252,9 @@ const Screens = (() => {
       '</span>' +
       '</header>' +
       '<div class="ch-body">' +
-      '<aside class="ch-avatar"><div data-avatar></div></aside>' +
+      '<aside class="ch-avatar"><div data-avatar></div>' +
+      (ctx.cheer ? '<div class="cheer" data-cheer aria-hidden="true">' + esc(ctx.cheer) + '</div>' : '') +
+      '</aside>' +
       '<div class="ch-main">' +
       (isBoss ? bossBarHtml(cur, ctx) : '') +
       (item.passage ? '<div class="card passage-card" data-passage>' + esc(item.passage) + '</div>' : '') +
@@ -4310,16 +4432,37 @@ const Screens = (() => {
 
   // ---------- settings overlay ----------
   function settings(host, opts) {
+    const o = opts || {};
     const wrap = document.createElement('div');
     wrap.className = 'overlay';
     wrap.setAttribute('data-settings-overlay', '');
+    let swatches = '';
+    for (const s of o.swatches || []) {
+      swatches +=
+        '<button class="swatch' + (s.current ? ' current' : '') + (s.unlocked ? '' : ' locked') +
+        '" data-action="set-look" data-look="' + esc(s.key) + '" data-press aria-label="' + esc(s.name) + ' leotard">' +
+        '<span class="swatch-chip" style="background:linear-gradient(180deg,' + s.top + ',' + s.low + ')"></span>' +
+        '<span class="swatch-name">' + (s.unlocked ? esc(s.name) : '🔒') + '</span>' +
+        '</button>';
+    }
+    let parentRows = '';
+    for (const r of o.parentRows || []) {
+      parentRows += '<p class="settings-note"><strong>' + esc(r.label) + ':</strong> ' + esc(r.note) + '</p>';
+    }
     wrap.innerHTML =
       '<div class="card settings-card">' +
-      '<h2>Settings</h2>' +
+      '<h2 data-settings-title>Settings</h2>' +
       '<button class="btn btn-big" data-action="toggle-mute" data-press data-mute-btn>' +
-      muteLabel(opts && opts.muted) + '</button>' +
+      muteLabel(o.muted) + '</button>' +
+      (swatches
+        ? '<p class="settings-note wardrobe-title">✨ Charlie&#39;s wardrobe</p><div class="wardrobe">' + swatches + '</div>'
+        : '') +
       '<p class="settings-note">Animations follow this device&#39;s motion setting.</p>' +
       '<p class="settings-note">Replay any land from the map — stars only grow!</p>' +
+      '<div class="parent-peek" data-parent hidden>' +
+      '<p class="settings-note"><strong>Grown-up peek</strong> (tap the title 3 times to hide)</p>' +
+      parentRows +
+      '</div>' +
       '<button class="btn btn-primary" data-action="close-settings" data-press>Done</button>' +
       '</div>';
     host.appendChild(wrap);
@@ -4409,6 +4552,13 @@ const Main = (() => {
   let world = 1;             // which kingdom map is showing (1 or 2)
   let newWorldToast = false; // one-shot nudge after the Crystal Castle falls
   let traveling = false;     // input lock while the balloon flies
+  let cheerEmoji = '';       // this run's companion cheerleader
+  let titleTaps = 0;         // triple-tap counter for the grown-up peek
+  let titleTapTs = 0;
+
+  // Wardrobe: leotards unlock by shining 3 stars on lands.
+  const LOOK_ORDER = ['crystal', 'sunset', 'meadow', 'midnight', 'gold'];
+  const LOOK_UNLOCK = { crystal: 0, sunset: 1, meadow: 3, midnight: 5, gold: 8 };
   let curView = null;        // latest run.current()
   let bossHits = 0;
   let bossIntroShown = false;
@@ -4450,6 +4600,34 @@ const Main = (() => {
 
   function landName(id) {
     return (Copy.landNames && Copy.landNames[id]) || LAND_NAMES[id] || id;
+  }
+  function look() {
+    return (game && game.state.settings && game.state.settings.look) || 'crystal';
+  }
+  function threeStarCount() {
+    let n = 0;
+    for (const id of WORLD1.concat(WORLD2)) {
+      if (((game.state.lands[id] || {}).stars || 0) === 3) n++;
+    }
+    return n;
+  }
+  // The land's hatched companion cheers from the sidelines; finales borrow
+  // any hatched friend. No friends hatched yet -> she cheers alone, no gap.
+  function pickCheer(id) {
+    const hatched = new Set(game.state.companions);
+    const isFinale = FINALE_IDS.indexOf(id) > -1;
+    const pool = (isFinale ? Companions.list : Companions.forLand(id))
+      .filter((c) => hatched.has(c.id));
+    if (!pool.length) return '';
+    const at = isFinale ? Math.floor(Math.random() * pool.length) : pool.length - 1;
+    return pool[at].emoji;
+  }
+  function cheerPlay(cls) {
+    const el = app.querySelector('[data-cheer]');
+    if (!el || reduced()) return;
+    el.classList.remove('cheer-bounce', 'cheer-peek');
+    void el.getBoundingClientRect();
+    el.classList.add(cls);
   }
   function isMuted() {
     return !!(game && game.state && game.state.settings && game.state.settings.muted);
@@ -4534,6 +4712,18 @@ const Main = (() => {
       else if (t.hasAttribute('data-leave-overlay')) closeLeaveConfirm(true);
       return;
     }
+    // grown-up peek: three quick taps on the Settings title
+    if (t && t.closest && t.closest('[data-settings-title]')) {
+      const now = performance.now();
+      titleTaps = now - titleTapTs < 1500 ? titleTaps + 1 : 1;
+      titleTapTs = now;
+      if (titleTaps >= 3) {
+        titleTaps = 0;
+        const pp = settingsEl && settingsEl.querySelector('[data-parent]');
+        if (pp) pp.hidden = !pp.hidden;
+      }
+      return;
+    }
     const actBtn = t && t.closest ? t.closest('[data-action]') : null;
     if (actBtn) {
       handleAction(actBtn.getAttribute('data-action'), actBtn);
@@ -4575,6 +4765,7 @@ const Main = (() => {
     else if (action === 'settings') openSettings();
     else if (action === 'close-settings') closeSettings();
     else if (action === 'toggle-mute') toggleMute(btn);
+    else if (action === 'set-look') setLook(btn);
     else if (action === 'backspace') tilesBackspace();
     else if (action === 'continue') { clearTimers(); showMap(); }
     else if (action === 'egg-ok') resolveEgg();
@@ -4659,7 +4850,46 @@ const Main = (() => {
 
   function openSettings() {
     if (settingsEl && settingsEl.isConnected) return;
-    settingsEl = Screens.settings(app, { muted: isMuted() });
+    const stars = threeStarCount();
+    const swatches = LOOK_ORDER.map((key) => {
+      const L = Avatar.LOOKS[key];
+      return {
+        key,
+        name: L.name,
+        top: L.top,
+        low: L.low,
+        unlocked: stars >= LOOK_UNLOCK[key],
+        current: look() === key,
+      };
+    });
+    const phase = (a) => (a >= 4.2 ? 'soaring' : a >= 3.2 ? 'strong and climbing' : a >= 2.2 ? 'growing steadily' : 'warming up');
+    const ab = game.state.abilities;
+    const parentRows = [
+      { label: 'Word building', note: phase(ab.words) },
+      { label: 'Rhyming', note: phase(ab.rhyme) },
+      { label: 'Math', note: phase(ab.math) },
+      { label: 'Patterns', note: phase(ab.patterns) },
+      { label: 'Reading', note: phase(ab.reading) },
+      { label: 'Lands with 3 stars', note: stars + ' of 12' },
+      { label: 'Friends hatched', note: game.state.companions.length + ' of 30' },
+    ];
+    settingsEl = Screens.settings(app, { muted: isMuted(), swatches, parentRows });
+  }
+  function setLook(btn) {
+    const key = btn.getAttribute('data-look');
+    const need = LOOK_UNLOCK[key];
+    if (need === undefined) return;
+    if (threeStarCount() >= need) {
+      game.setLook(key); // persists immediately
+      AudioKit.play('hatch');
+      try { Juice.toast('✨ ' + (Avatar.LOOKS[key] ? Avatar.LOOKS[key].name : '') + ' leotard on!'); } catch (e) { /* toast only */ }
+      closeSettings();
+      openSettings(); // re-render swatch states
+      const av = app.querySelector('[data-avatar]');
+      if (av) Avatar.mount(av, look()); // live preview if mid-challenge
+    } else {
+      try { Juice.toast('Shine 3 stars on ' + need + ' lands to open this one!'); } catch (e) { /* toast only */ }
+    }
   }
   function closeSettings() {
     if (settingsEl) {
@@ -4710,6 +4940,8 @@ const Main = (() => {
     bossHits = 0;
     bossIntroShown = false;
     originalsDone = 0;
+    cheerEmoji = pickCheer(id);
+    AudioKit.motif(id); // the land's little arrival melody
     run = game.startLand(id);
     screen = 'challenge';
     renderChallengeScreen();
@@ -4743,8 +4975,9 @@ const Main = (() => {
       bossHits,
       muted: isMuted(),
       isFinale: FINALE_IDS.indexOf(landId) > -1,
+      cheer: cheerEmoji,
     });
-    Avatar.mount(app.querySelector('[data-avatar]'));
+    Avatar.mount(app.querySelector('[data-avatar]'), look());
   }
 
   // ---------------- tiles paradigm ----------------
@@ -4863,6 +5096,7 @@ const Main = (() => {
       Screens.clearNotes(app);
       Screens.showFeedback(app, out.feedback);
       Avatar.trick(streakN);
+      cheerPlay('cheer-bounce');
       trailUntil = performance.now() + 950;
       if (reduced()) {
         if (card) {
@@ -4902,6 +5136,7 @@ const Main = (() => {
       AudioKit.play('miss');
       if (bossBlock) Screens.golemPlay(app, 'block');
       if (card) Juice.shake(card);
+      cheerPlay('cheer-peek');
       Screens.showHint(app, out.feedback, out.hint || run.hint());
       resetAttemptInputs();
       busy = false;
