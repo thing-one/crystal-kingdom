@@ -1,0 +1,4631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Crystal Kingdom">
+<meta name="format-detection" content="telephone=no">
+<title>&#x1F48E; Charlie's Crystal Kingdom</title>
+<style>
+/* === src/ui/styles.css === */
+/* ============================================================
+   Charlie's Crystal Kingdom — visual system
+   Palette: twilight indigo base, aurora violet, crystal teal,
+   warm coral, star gold, cloud white. No external assets.
+   ============================================================ */
+
+:root {
+  --indigo-deep: #12103a;
+  --indigo: #1d1b4b;
+  --indigo-soft: #2c2766;
+  --violet: #8b5cf6;
+  --aurora: #a78bfa;
+  --aurora-soft: #c4b5fd;
+  --teal: #2dd4bf;
+  --teal-soft: #7ef0e2;
+  --coral: #ff8e7a;
+  --coral-soft: #ffb3a3;
+  --gold: #ffd166;
+  --gold-soft: #ffe9a8;
+  --white: #f7f5ff;
+  --ink: #241f52;
+
+  /* land theme defaults (map screen) */
+  --land-a: var(--aurora);
+  --land-b: var(--teal);
+  --land-glow: rgba(167, 139, 250, 0.45);
+
+  --glass: rgba(255, 255, 255, 0.12);
+  --glass-edge: rgba(255, 255, 255, 0.28);
+  --shadow-deep: 0 18px 40px rgba(8, 6, 30, 0.45);
+  --shadow-soft: 0 8px 22px rgba(8, 6, 30, 0.3);
+  --radius: 24px;
+  --tap: 64px;
+}
+
+/* per-land hue theming */
+[data-land='woods']    { --land-a: #4ade80; --land-b: #2dd4bf; --land-glow: rgba(74, 222, 128, 0.4); }
+[data-land='reef']     { --land-a: #2dd4bf; --land-b: #38bdf8; --land-glow: rgba(45, 212, 191, 0.4); }
+[data-land='mountains']{ --land-a: #93c5fd; --land-b: #c4b5fd; --land-glow: rgba(147, 197, 253, 0.4); }
+[data-land='palace']   { --land-a: #a78bfa; --land-b: #f0abfc; --land-glow: rgba(167, 139, 250, 0.45); }
+[data-land='summit']   { --land-a: #ffd166; --land-b: #ff8e7a; --land-glow: rgba(255, 209, 102, 0.45); }
+[data-land='castle']   { --land-a: #7ef0e2; --land-b: #c4b5fd; --land-glow: rgba(126, 240, 226, 0.5); }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--indigo-deep);
+}
+
+body {
+  font-family: ui-rounded, -apple-system, system-ui, 'Segoe UI', sans-serif;
+  color: var(--white);
+  -webkit-text-size-adjust: 100%;
+}
+
+.game-surface, .game-surface * {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% 110%, var(--indigo-soft) 0%, var(--indigo) 45%, var(--indigo-deep) 100%);
+  padding:
+    env(safe-area-inset-top)
+    env(safe-area-inset-right)
+    env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+#fx {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* ---------- screens ---------- */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  animation: cck-screen-in 0.45s ease both;
+}
+@keyframes cck-screen-in {
+  from { opacity: 0; transform: scale(1.02); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* ---------- buttons ---------- */
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.btn {
+  min-width: var(--tap);
+  min-height: var(--tap);
+  padding: 12px 26px;
+  border-radius: 22px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  background: var(--glass);
+  border: 1.5px solid var(--glass-edge);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow-soft);
+  color: var(--white);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.2s ease;
+}
+.btn:active, .tile:active, .choice:active, [data-press]:active {
+  transform: scale(0.93);
+  box-shadow: 0 3px 10px rgba(8, 6, 30, 0.35);
+}
+.btn-primary {
+  background: linear-gradient(135deg, var(--violet), var(--teal));
+  border-color: rgba(255, 255, 255, 0.45);
+  text-shadow: 0 1px 3px rgba(8, 6, 30, 0.35);
+}
+.btn-ghost { font-size: 22px; padding: 10px 18px; }
+.btn-big { font-size: 28px; padding: 16px 32px; }
+
+/* ---------- glass cards ---------- */
+.card {
+  background: var(--glass);
+  border: 1.5px solid var(--glass-edge);
+  border-radius: var(--radius);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  box-shadow: var(--shadow-deep);
+}
+
+/* ============================================================
+   TITLE SCREEN
+   ============================================================ */
+.screen-title {
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  text-align: center;
+  padding: 24px;
+}
+.title-gem {
+  font-size: 84px;
+  line-height: 1;
+  filter: drop-shadow(0 0 24px rgba(126, 240, 226, 0.65));
+  animation: cck-bob 2.6s ease-in-out infinite;
+}
+.game-title {
+  font-size: clamp(40px, 7vw, 76px);
+  font-weight: 800;
+  line-height: 1.05;
+}
+.game-title .grad {
+  display: block;
+  background: linear-gradient(100deg, var(--gold), var(--teal-soft), var(--aurora-soft), var(--gold));
+  background-size: 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: cck-shimmer-text 5s linear infinite;
+}
+@keyframes cck-shimmer-text {
+  from { background-position: 0% 0; }
+  to   { background-position: 250% 0; }
+}
+.title-spark { display: inline-block; animation: cck-twinkle 1.8s ease-in-out infinite; color: var(--gold); }
+.title-spark:nth-child(2n) { animation-delay: 0.6s; }
+.title-sub { font-size: 24px; color: var(--aurora-soft); }
+.btn-play {
+  font-size: 40px;
+  padding: 22px 70px;
+  border-radius: 36px;
+  background: linear-gradient(135deg, var(--coral), var(--gold));
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: #4a2418;
+  box-shadow: 0 14px 34px rgba(255, 142, 122, 0.4), var(--shadow-soft);
+  animation: cck-breathe 2.2s ease-in-out infinite;
+}
+@keyframes cck-breathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* ============================================================
+   MAP SCREEN
+   ============================================================ */
+.screen-map { overflow: hidden; }
+.map-stage { position: absolute; inset: 0; }
+.map-stage svg { width: 100%; height: 100%; display: block; }
+.map-top {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 0; right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 18px;
+  z-index: 5;
+  pointer-events: none;
+}
+.map-top .btn { pointer-events: auto; }
+.map-title {
+  font-size: clamp(22px, 3.4vw, 34px);
+  font-weight: 800;
+  text-shadow: 0 2px 12px rgba(8, 6, 30, 0.6);
+}
+.map-actions { display: flex; gap: 12px; }
+
+/* --- world map SVG pieces --- */
+.wm-cloud { animation: cck-drift 26s linear infinite; }
+.wm-cloud.c2 { animation-duration: 38s; animation-delay: -14s; }
+.wm-cloud.c3 { animation-duration: 50s; animation-delay: -30s; }
+@keyframes cck-drift {
+  from { transform: translateX(-220px); }
+  to   { transform: translateX(1220px); }
+}
+.wm-skystar { animation: cck-twinkle 2.4s ease-in-out infinite; }
+@keyframes cck-twinkle {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.wm-aurora {
+  animation: cck-aurora 9s ease-in-out infinite alternate;
+  mix-blend-mode: screen;
+}
+@keyframes cck-aurora {
+  from { opacity: 0.25; transform: translateY(0); }
+  to   { opacity: 0.6;  transform: translateY(-14px); }
+}
+.wm-path {
+  stroke-dasharray: 10 16;
+  animation: cck-path-flow 3.2s linear infinite;
+}
+@keyframes cck-path-flow {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: -52; }
+}
+
+.wm-land { cursor: pointer; }
+.wm-land .wm-float { animation: cck-island-float 5.4s ease-in-out infinite; }
+.wm-land:nth-of-type(2n) .wm-float { animation-delay: -2.7s; }
+@keyframes cck-island-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+.wm-land[data-state='locked'] { filter: saturate(0.18) brightness(0.72); }
+.wm-land[data-state='locked'] .wm-float { animation: none; }
+.wm-land[data-state='done'] { filter: drop-shadow(0 0 16px var(--land-glow, rgba(255, 209, 102, 0.5))); }
+.wm-land[data-state='done'] .wm-doneglow { animation: cck-glow-pulse 2.6s ease-in-out infinite; }
+@keyframes cck-glow-pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.85; }
+}
+.wm-land.wm-next .wm-ring { animation: cck-next-pulse 1.6s ease-in-out infinite; }
+@keyframes cck-next-pulse {
+  0%, 100% { opacity: 0.15; transform: scale(0.96); }
+  50% { opacity: 0.8; transform: scale(1.06); }
+}
+.wm-name { font-weight: 800; }
+
+.wm-tree { transform-origin: center bottom; transform-box: fill-box; animation: cck-sway 3.4s ease-in-out infinite; }
+.wm-tree.t2 { animation-delay: -1.2s; }
+.wm-tree.t3 { animation-delay: -2.3s; }
+@keyframes cck-sway {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50% { transform: rotate(2.5deg); }
+}
+.wm-wave { animation: cck-wave 3s ease-in-out infinite; }
+.wm-wave.w2 { animation-delay: -1.5s; }
+@keyframes cck-wave {
+  0%, 100% { transform: translateX(-6px); }
+  50% { transform: translateX(6px); }
+}
+.wm-snow { animation: cck-snowfall 4.6s linear infinite; }
+.wm-snow.s2 { animation-delay: -1.6s; }
+.wm-snow.s3 { animation-delay: -3.1s; }
+@keyframes cck-snowfall {
+  from { transform: translateY(-34px); opacity: 0; }
+  20%  { opacity: 0.9; }
+  90%  { opacity: 0.7; }
+  to   { transform: translateY(30px); opacity: 0; }
+}
+.wm-facet { animation: cck-facet 2.8s ease-in-out infinite; }
+.wm-facet.f2 { animation-delay: -0.9s; }
+.wm-facet.f3 { animation-delay: -1.8s; }
+@keyframes cck-facet {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+.wm-halo { animation: cck-glow-pulse 3s ease-in-out infinite; }
+
+/* ============================================================
+   CHALLENGE SCREEN
+   ============================================================ */
+.screen-challenge { padding: 6px 14px 12px; }
+.ch-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 4px;
+  min-height: 72px;
+}
+.ch-top-right { display: flex; align-items: center; gap: 12px; }
+.ch-land-chip {
+  font-size: 22px;
+  font-weight: 800;
+  padding: 8px 18px;
+  border-radius: 18px;
+  background: linear-gradient(120deg, var(--land-a), var(--land-b));
+  color: var(--indigo-deep);
+  box-shadow: var(--shadow-soft);
+}
+.dots { display: flex; gap: 9px; align-items: center; }
+.dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  position: relative;
+}
+.dot.done { background: var(--gold); box-shadow: 0 0 8px rgba(255, 209, 102, 0.7); }
+.dot.now {
+  background: var(--white);
+  animation: cck-dot-now 1.2s ease-in-out infinite;
+}
+@keyframes cck-dot-now {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+.dot-egg::after {
+  content: '🥚';
+  position: absolute;
+  font-size: 13px;
+  top: -17px; left: 50%;
+  transform: translateX(-50%);
+}
+.dot-egg.done::after { content: '✨'; }
+
+.ch-body {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  min-height: 0;
+}
+.ch-avatar {
+  flex: 0 0 190px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+.ch-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  /* flex-start + auto-margin spacers: centers when content fits, and the top
+     stays reachable when it overflows (justify-content:center would push
+     overflow above the scroll origin and clip long boss passages). */
+  justify-content: flex-start;
+  gap: 12px;
+  min-width: 0;
+  overflow: hidden auto;
+}
+.ch-main::before { content: ''; margin-top: auto; }
+.ch-main::after { content: ''; margin-bottom: auto; }
+
+.challenge-card {
+  position: relative;
+  padding: 22px 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-top: 4px solid var(--land-a);
+}
+.prompt { font-size: clamp(24px, 3vw, 32px); font-weight: 800; line-height: 1.25; }
+
+.passage-card {
+  padding: 18px 24px;
+  font-size: clamp(22px, 2.6vw, 28px);
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.16);
+  max-height: 38vh;
+  overflow-y: auto;
+}
+
+/* --- tiles paradigm --- */
+.word-clue { display: flex; align-items: center; gap: 14px; font-size: 24px; color: var(--gold-soft); }
+.clue-emoji { font-size: 44px; }
+.slots { display: flex; gap: 10px; flex-wrap: wrap; }
+.slot {
+  width: var(--tap); height: var(--tap);
+  border-radius: 16px;
+  border: 2.5px dashed rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.07);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 800;
+}
+.slot.filled {
+  border-style: solid;
+  border-color: var(--teal-soft);
+  background: rgba(45, 212, 191, 0.22);
+  animation: cck-pop-in 0.18s ease;
+}
+.slot.reveal-fill { border-color: var(--gold); background: rgba(255, 209, 102, 0.25); color: var(--gold-soft); }
+@keyframes cck-pop-in {
+  from { transform: scale(0.6); }
+  to   { transform: scale(1); }
+}
+.tile-bank { display: flex; gap: 12px; flex-wrap: wrap; }
+.tile {
+  width: var(--tap); height: var(--tap);
+  min-width: var(--tap); min-height: var(--tap);
+  border-radius: 18px;
+  font-size: 34px;
+  font-weight: 800;
+  color: var(--ink);
+  background: linear-gradient(160deg, var(--white), #ddd6ff);
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  box-shadow: 0 6px 0 rgba(120, 100, 220, 0.45), var(--shadow-soft);
+  transition: transform 0.1s ease, opacity 0.2s ease;
+}
+.tile-used { opacity: 0.18; pointer-events: none; box-shadow: none; }
+.tile-back {
+  background: linear-gradient(160deg, var(--coral-soft), var(--coral));
+  color: #5b1f12;
+  font-size: 30px;
+}
+
+/* --- choices paradigm --- */
+.choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.choices.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.choice {
+  min-height: 84px;
+  min-width: var(--tap);
+  padding: 14px 18px;
+  border-radius: 20px;
+  font-size: clamp(24px, 2.8vw, 32px);
+  font-weight: 800;
+  color: var(--white);
+  background: rgba(255, 255, 255, 0.13);
+  border: 2.5px solid rgba(255, 255, 255, 0.3);
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.1s ease, border-color 0.15s ease, background 0.15s ease;
+  word-break: break-word;
+}
+.choices.big .choice { font-size: clamp(36px, 5vw, 54px); min-height: 100px; }
+.choice.picked {
+  border-color: var(--teal-soft);
+  background: rgba(45, 212, 191, 0.25);
+  box-shadow: 0 0 0 4px rgba(126, 240, 226, 0.35), var(--shadow-soft);
+}
+.choice.is-answer {
+  border-color: var(--gold);
+  background: rgba(255, 209, 102, 0.28);
+  box-shadow: 0 0 0 5px rgba(255, 209, 102, 0.45), var(--shadow-soft);
+  animation: cck-answer-glow 0.9s ease-in-out 2;
+}
+@keyframes cck-answer-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+/* --- feedback / hint / reveal --- */
+.feedback {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--gold);
+  text-align: center;
+  animation: cck-pop-in 0.25s ease;
+}
+.hint-card {
+  border-radius: 18px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, rgba(255, 142, 122, 0.25), rgba(255, 209, 102, 0.22));
+  border: 1.5px solid rgba(255, 209, 102, 0.5);
+  animation: cck-rise-in 0.3s ease;
+}
+.hint-card .hint-top { font-size: 22px; font-weight: 700; color: var(--coral-soft); }
+.hint-card .hint-line { font-size: 25px; font-weight: 800; color: var(--gold-soft); margin-top: 4px; }
+.reveal-card {
+  border-radius: 18px;
+  padding: 14px 20px;
+  background: rgba(255, 209, 102, 0.16);
+  border: 1.5px solid rgba(255, 209, 102, 0.55);
+  animation: cck-rise-in 0.3s ease;
+}
+.reveal-card .reveal-top { font-size: 22px; font-weight: 700; color: var(--gold-soft); }
+.reveal-card .reveal-line { font-size: 25px; font-weight: 800; margin-top: 4px; }
+@keyframes cck-rise-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.soft-flash { animation: cck-soft-flash 0.7s ease; }
+@keyframes cck-soft-flash {
+  0% { background-color: rgba(255, 255, 255, 0.12); }
+  40% { background-color: rgba(126, 240, 226, 0.3); }
+  100% { background-color: rgba(255, 255, 255, 0.12); }
+}
+
+/* --- boss --- */
+.boss-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 8px 18px;
+  border-radius: 20px;
+  background: rgba(8, 6, 30, 0.35);
+  border: 1.5px solid var(--glass-edge);
+}
+.golem { width: 96px; height: 96px; flex: 0 0 auto; }
+.golem svg { width: 100%; height: 100%; display: block; }
+.golem .golem-rig { animation: cck-bob 2.8s ease-in-out infinite; transform-origin: 50% 80%; }
+.golem.block .golem-rig { animation: cck-golem-block 0.55s ease; }
+@keyframes cck-golem-block {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-7px) rotate(-3deg); }
+  55% { transform: translateX(6px) rotate(2.5deg); }
+  100% { transform: translateX(0); }
+}
+.golem.hit .golem-rig { animation: cck-golem-hit 0.5s ease; }
+@keyframes cck-golem-hit {
+  0% { transform: scale(1); }
+  35% { transform: scale(0.9) rotate(2deg); }
+  100% { transform: scale(1); }
+}
+.shell { display: flex; gap: 8px; flex: 1; }
+.shell-seg {
+  flex: 1;
+  height: 30px;
+  border-radius: 10px;
+  background: linear-gradient(150deg, var(--teal-soft), var(--aurora));
+  border: 1.5px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 0 10px rgba(126, 240, 226, 0.45);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+.shell-seg.cracked {
+  opacity: 0.22;
+  transform: scaleY(0.45);
+  background: linear-gradient(150deg, #6f6a9c, #4d4880);
+  box-shadow: none;
+}
+.boss-name { font-size: 22px; font-weight: 800; color: var(--aurora-soft); }
+
+/* ============================================================
+   AVATAR
+   ============================================================ */
+.avatar { width: 170px; height: 230px; }
+.avatar svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.av-rig { transform-origin: 60px 120px; transform-box: view-box; }
+.av-rig.av-idle { animation: cck-bob 2.4s ease-in-out infinite; }
+@keyframes cck-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.av-pony { transform-origin: 76px 30px; transform-box: view-box; animation: cck-pony 2.4s ease-in-out infinite; }
+@keyframes cck-pony {
+  0%, 100% { transform: rotate(-4deg); }
+  50% { transform: rotate(7deg); }
+}
+.av-rig.av-cartwheel { animation: cck-cartwheel 1s ease-in-out both; }
+@keyframes cck-cartwheel {
+  0%   { transform: rotate(0) translateX(0); }
+  50%  { transform: rotate(180deg) translateX(-10px) scale(1.04); }
+  100% { transform: rotate(360deg) translateX(0); }
+}
+.av-rig.av-flip { animation: cck-flip 1.05s cubic-bezier(0.34, 1.3, 0.5, 1) both; }
+@keyframes cck-flip {
+  0%   { transform: translateY(0) rotate(0); }
+  20%  { transform: translateY(-12px) rotate(-20deg) scaleY(0.92); }
+  60%  { transform: translateY(-72px) rotate(-300deg); }
+  85%  { transform: translateY(-6px) rotate(-360deg); }
+  100% { transform: translateY(0) rotate(-360deg); }
+}
+.av-rig.av-stuck { animation: cck-stuck 1.35s ease-in-out both; }
+@keyframes cck-stuck {
+  0%   { transform: translateY(0) rotate(0); }
+  18%  { transform: translateY(-16px) rotate(-30deg) scaleY(0.9); }
+  48%  { transform: translateY(-86px) rotate(-380deg) scale(1.06); }
+  72%  { transform: translateY(0) rotate(-720deg) scaleY(0.8) scaleX(1.12); }
+  84%  { transform: translateY(-10px) rotate(-720deg) scaleY(1.05); }
+  100% { transform: translateY(0) rotate(-720deg) scale(1); }
+}
+
+/* ============================================================
+   CELEBRATION
+   ============================================================ */
+.screen-celebrate {
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  text-align: center;
+  padding: 28px;
+}
+.cele-title {
+  font-size: clamp(38px, 6vw, 64px);
+  font-weight: 800;
+  background: linear-gradient(100deg, var(--gold), var(--teal-soft), var(--gold));
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: cck-shimmer-text 4s linear infinite;
+}
+.cele-stars { display: flex; gap: 22px; }
+.cele-star {
+  font-size: 84px;
+  line-height: 1;
+  opacity: 0.18;
+  filter: saturate(0);
+  transform: scale(0.7);
+  transition: none;
+}
+.cele-star.lit {
+  opacity: 1;
+  filter: saturate(1) drop-shadow(0 0 22px rgba(255, 209, 102, 0.8));
+  animation: cck-star-pop 0.55s cubic-bezier(0.34, 1.6, 0.5, 1) both;
+}
+@keyframes cck-star-pop {
+  0% { transform: scale(0.2) rotate(-30deg); }
+  70% { transform: scale(1.25) rotate(6deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.cele-egg { font-size: 92px; line-height: 1; }
+.cele-egg.wobble { animation: cck-egg-wobble 0.9s ease-in-out infinite; }
+@keyframes cck-egg-wobble {
+  0%, 100% { transform: rotate(-9deg); }
+  50% { transform: rotate(9deg); }
+}
+.cele-card, .egg-card {
+  padding: 22px 34px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  animation: cck-rise-in 0.45s ease both;
+}
+.cele-card .friend-emoji, .egg-card .friend-emoji { font-size: 76px; animation: cck-bob 2s ease-in-out infinite; }
+.cele-card .friend-name, .egg-card .friend-name { font-size: 30px; font-weight: 800; color: var(--gold); }
+.cele-card .friend-line, .egg-card .friend-line { font-size: 23px; color: var(--aurora-soft); }
+.cele-skip-note { position: absolute; bottom: max(14px, env(safe-area-inset-bottom)); font-size: 18px; color: rgba(247, 245, 255, 0.55); }
+.cele-mute {
+  position: absolute;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(14px, env(safe-area-inset-right));
+}
+
+/* egg overlay mid-run */
+.egg-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 11, 42, 0.62);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: cck-screen-in 0.3s ease both;
+}
+
+/* ============================================================
+   COLLECTION — Charlie's Friends
+   ============================================================ */
+.screen-friends { padding: 12px 18px; gap: 10px; }
+.friends-top { display: flex; align-items: center; gap: 16px; min-height: 72px; }
+.friends-title { font-size: clamp(28px, 4vw, 40px); font-weight: 800; color: var(--gold-soft); }
+.friends-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 14px;
+  overflow-y: auto;
+  padding: 6px 2px 18px;
+  align-content: start;
+}
+.friend {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 10px;
+  min-height: 150px;
+  justify-content: center;
+}
+.friend-emoji { font-size: 56px; line-height: 1; }
+.friend .bob { animation: cck-bob 2.2s ease-in-out infinite; }
+.friend:nth-child(2n) .bob { animation-delay: -1.1s; }
+.friend:nth-child(3n) .bob { animation-delay: -0.6s; }
+.friend-name { font-size: 19px; font-weight: 800; text-align: center; }
+.friend-land { font-size: 15px; color: var(--aurora-soft); }
+.friend-shadow .friend-emoji { filter: brightness(0) opacity(0.45); }
+.friend-shadow .friend-name { color: rgba(247, 245, 255, 0.45); }
+
+/* ============================================================
+   SETTINGS OVERLAY
+   ============================================================ */
+.overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(13, 11, 42, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  animation: cck-screen-in 0.25s ease both;
+}
+.settings-card {
+  width: min(440px, 88vw);
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  align-items: stretch;
+  text-align: center;
+}
+.settings-card h2 { font-size: 32px; font-weight: 800; }
+.settings-note { font-size: 20px; color: var(--aurora-soft); line-height: 1.4; }
+
+/* ============================================================
+   PORTRAIT LAYOUT
+   ============================================================ */
+@media (orientation: portrait) {
+  .ch-body { flex-direction: column; gap: 6px; }
+  .ch-avatar { flex: 0 0 auto; order: 2; padding-bottom: 0; }
+  .avatar { width: 120px; height: 160px; }
+  .ch-main { order: 1; padding-top: 6px; }
+  /* 2 columns keeps all 4 choices above the fold (a single stacked column
+     pushed the 4th below it); 72px still well past the 64px tap floor. */
+  .choices { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choices.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choices.big { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .choice { min-height: 72px; }
+  .passage-card { max-height: 26vh; }
+  .map-title { font-size: 20px; }
+  .boss-bar { flex-wrap: wrap; }
+  .cele-star { font-size: 64px; }
+}
+
+@media (max-width: 740px) {
+  .btn { font-size: 20px; }
+  .prompt { font-size: 22px; }
+}
+
+/* ============================================================
+   REDUCED MOTION — every animation gets a calm alternate
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .screen { animation: cck-fade-in 0.4s ease both; }
+  @keyframes cck-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .title-gem, .btn-play, .game-title .grad, .cele-title,
+  .wm-cloud, .wm-skystar, .wm-aurora, .wm-path,
+  .wm-land .wm-float, .wm-tree, .wm-wave, .wm-snow, .wm-facet, .wm-halo,
+  .wm-land[data-state='done'] .wm-doneglow, .wm-land.wm-next .wm-ring,
+  .dot.now, .av-pony, .golem .golem-rig, .friend .bob,
+  .cele-card .friend-emoji, .egg-card .friend-emoji, .title-spark {
+    animation: none;
+  }
+  .av-rig.av-idle { animation: none; }
+  .av-rig.av-cartwheel, .av-rig.av-flip, .av-rig.av-stuck {
+    animation: cck-gentle-bounce 0.7s ease both;
+  }
+  @keyframes cck-gentle-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+  .golem.block .golem-rig { animation: cck-dim 0.5s ease; }
+  .golem.hit .golem-rig { animation: cck-dim 0.5s ease; }
+  @keyframes cck-dim {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.55; }
+  }
+  .slot.filled, .feedback { animation: cck-fade-in 0.3s ease both; }
+  .hint-card, .reveal-card, .cele-card, .egg-card { animation: cck-fade-in 0.35s ease both; }
+  .choice.is-answer { animation: none; }
+  .cele-star { transition: opacity 0.5s ease, filter 0.5s ease; }
+  .cele-star.lit { animation: none; transform: scale(1); }
+  .cele-egg.wobble { animation: cck-dim 1.2s ease infinite; }
+  .egg-overlay, .overlay { animation: cck-fade-in 0.3s ease both; }
+  .soft-flash { animation: cck-fade-in 0.5s ease; }
+}
+
+/* === src/ui/juice.css === */
+/* juice.css — toasts, press states, shake/dim. Twilight glass aesthetic:
+   indigo base, crystal teal edges, star-gold accents. No external refs. */
+
+/* ---- toast -------------------------------------------------------------- */
+
+.jz-toast-wrap {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 14px);
+  left: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  z-index: 9000;
+}
+
+.jz-toast {
+  max-width: min(86vw, 480px);
+  padding: 14px 26px;
+  border-radius: 22px;
+  font-family: ui-rounded, -apple-system, system-ui, sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: center;
+  color: #fdf6e3;
+  background: linear-gradient(
+    155deg,
+    rgba(49, 46, 129, 0.92),
+    rgba(30, 27, 75, 0.92)
+  );
+  border: 1.5px solid rgba(94, 234, 212, 0.45);
+  box-shadow:
+    0 10px 30px rgba(14, 11, 46, 0.45),
+    0 2px 8px rgba(14, 11, 46, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  opacity: 0;
+  transform: translateY(-28px) scale(0.9);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.jz-toast-in {
+  animation: jz-toast-spring 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) forwards;
+}
+
+.jz-toast-out {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(-16px) scale(0.94);
+}
+
+@keyframes jz-toast-spring {
+  0% {
+    opacity: 0;
+    transform: translateY(-32px) scale(0.85);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(4px) scale(1.03);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ---- springy press states ------------------------------------------------ */
+
+[data-press] {
+  transition:
+    transform 0.18s cubic-bezier(0.2, 1.6, 0.4, 1),
+    box-shadow 0.18s cubic-bezier(0.2, 1.6, 0.4, 1),
+    filter 0.18s ease;
+  will-change: transform;
+}
+
+[data-press].is-pressed {
+  transform: scale(0.93);
+  box-shadow:
+    0 2px 6px rgba(14, 11, 46, 0.35),
+    inset 0 1px 2px rgba(14, 11, 46, 0.2);
+  filter: brightness(1.08) saturate(1.05);
+}
+
+/* ---- shake (gentle, horizontal) ------------------------------------------ */
+
+.jz-shake {
+  animation: jz-shake-soft 0.46s ease-in-out;
+}
+
+@keyframes jz-shake-soft {
+  0%, 100% { transform: translateX(0); }
+  18% { transform: translateX(-7px); }
+  38% { transform: translateX(6px); }
+  58% { transform: translateX(-4px); }
+  78% { transform: translateX(3px); }
+}
+
+/* ---- dim (reduced-motion substitute for shake) ---------------------------- */
+
+.jz-dim {
+  animation: jz-dim-soft 0.36s ease-in-out;
+}
+
+@keyframes jz-dim-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+/* ---- reduced motion overrides --------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .jz-toast-in {
+    animation: jz-toast-fade 0.25s ease forwards;
+  }
+
+  @keyframes jz-toast-fade {
+    from { opacity: 0; transform: none; }
+    to { opacity: 1; transform: none; }
+  }
+
+  .jz-toast-out {
+    transition: opacity 0.25s ease;
+    transform: none;
+  }
+
+  [data-press] {
+    transition: filter 0.15s ease;
+  }
+
+  [data-press].is-pressed {
+    transform: none;
+    filter: brightness(1.12);
+  }
+
+  .jz-shake {
+    animation: none;
+  }
+}
+
+</style>
+</head>
+<body>
+<div id="app" class="game-surface"></div>
+<canvas id="fx" aria-hidden="true"></canvas>
+<script>
+'use strict';
+(function(){
+// === src/content/copy.js ===
+// src/content/copy.js — rotating feedback copy pools (player-facing strings).
+// All lines <= 12 words; effort/strategy praise only; no banned words.
+const Copy = (() => {
+  const correctPool = [
+    'You sounded that out!',
+    'You spotted the pattern!',
+    'Your brain grew on that one!',
+    'You stuck with it — hero move!',
+    'Strong thinking, gym star!',
+    'You checked every choice — great strategy!',
+    'All that practice is paying off!',
+    'You took your time and nailed it!',
+    'Flip-tastic focus!',
+    'You broke it into pieces like a champ!',
+  ];
+  const missPool = [
+    'Tricky one! Hints help heroes.',
+    'Brains grow on the hard ones.',
+    'Take a breath and try once more.',
+    'Tough ones make your brain stronger.',
+    'A hint can light the way.',
+    "Heroes try again — you've got this.",
+    'Shake it off, gymnast style. Try again!',
+  ];
+  const revealPool = [
+    'Here it is — look together:',
+    'No worries — here is the answer:',
+    'That was a toughie. Here it is:',
+    'Peek with me — here comes the answer:',
+  ];
+  const levelupPool = [
+    'Level up! Your power is growing!',
+    'Three in a row — sparkling streak!',
+    'You are on a roll!',
+    'Streak magic! The crystals glow brighter!',
+  ];
+  const bossIntros = {
+    woods: 'A mossy golem blocks the path! Build words to crack his shell!',
+    reef: 'A coral golem rises from the deep! Rhyme to crack his shell!',
+    mountains: 'A frosty golem guards the peak! Count your way through!',
+    palace: 'A crystal golem blocks the throne room! Spot the patterns!',
+    summit: 'A golden golem guards the stories! Read closely, hero!',
+    castle: 'The greatest golem of all awaits! Use everything you know!',
+  };
+  const landNames = {
+    woods: 'Word Woods',
+    reef: 'Rhyme Reef',
+    mountains: 'Number Mountains',
+    palace: 'Pattern Palace',
+    summit: 'Story Summit',
+    castle: 'Crystal Castle',
+  };
+  const pickFrom = (rng, arr) => arr[Math.min(arr.length - 1, Math.floor(rng() * arr.length))];
+  const ALL_PLAYER_STRINGS = [
+    ...correctPool,
+    ...missPool,
+    ...revealPool,
+    ...levelupPool,
+    ...Object.values(bossIntros),
+    ...Object.values(landNames),
+  ];
+  return {
+    correct: (rng) => pickFrom(rng, correctPool),
+    miss: (rng) => pickFrom(rng, missPool),
+    reveal: (rng) => pickFrom(rng, revealPool),
+    levelup: (rng) => pickFrom(rng, levelupPool),
+    bossIntro: (landId) => bossIntros[landId] || bossIntros.castle,
+    landNames,
+    ALL_PLAYER_STRINGS,
+  };
+})();
+
+// === src/content/companions.js ===
+// src/content/companions.js — 15 collectible companions, 3 per land,
+// ordered [challenge3, challenge6, boss] within each land.
+const Companions = (() => {
+  const list = [
+    // Word Woods
+    { id: 'hazel', name: 'Hazel the Hedgehog', land: 'woods', emoji: '🦔', line: 'I curl up when I am shy. Hello, friend!' },
+    { id: 'willow', name: 'Willow the Deer', land: 'woods', emoji: '🦌', line: 'I leap over logs — almost like a gymnast!' },
+    { id: 'fern', name: 'Fern the Fox', land: 'woods', emoji: '🦊', line: 'I know every secret path in these woods!' },
+    // Rhyme Reef
+    { id: 'bubbles', name: 'Bubbles the Fish', land: 'reef', emoji: '🐠', line: 'I blow bubble rings when I am happy!' },
+    { id: 'pearl', name: 'Pearl the Octopus', land: 'reef', emoji: '🐙', line: 'Eight arms means eight high fives!' },
+    { id: 'coral', name: 'Coral the Turtle', land: 'reef', emoji: '🐢', line: 'Slow and steady — that is how I explore!' },
+    // Number Mountains
+    { id: 'echo', name: 'Echo the Snow Hare', land: 'mountains', emoji: '🐇', line: 'I hop so high I touch the snowflakes!' },
+    { id: 'frost', name: 'Frost the Polar Bear', land: 'mountains', emoji: '🐻‍❄️', line: 'Big paws give the warmest hugs. Want one?' },
+    { id: 'pebble', name: 'Pebble the Penguin', land: 'mountains', emoji: '🐧', line: 'I slide down hills on my tummy. Wheee!' },
+    // Pattern Palace
+    { id: 'opal', name: 'Opal the Butterfly', land: 'palace', emoji: '🦋', line: 'I flew through a crystal and turned sparkly!' },
+    { id: 'prism', name: 'Prism the Dragon', land: 'palace', emoji: '🐉', line: 'I breathe rainbows, not fire. Surprise!' },
+    { id: 'nova', name: 'Nova the Unicorn', land: 'palace', emoji: '🦄', line: 'My horn glows when you solve a puzzle!' },
+    // Story Summit
+    { id: 'goldie', name: 'Goldie the Lion', land: 'summit', emoji: '🦁', line: 'My mane shines like the summit sun!' },
+    { id: 'skye', name: 'Skye the Eagle', land: 'summit', emoji: '🦅', line: 'I carry your stories across the whole sky!' },
+    { id: 'sage', name: 'Sage the Owl', land: 'summit', emoji: '🦉', line: 'I have read every story on this summit!' },
+  ];
+  return {
+    list,
+    forLand: (landId) => list.filter((c) => c.land === landId),
+  };
+})();
+
+// === src/content/words.js ===
+// src/content/words.js — unscramble bank. Each item: word, emoji, kid-clear clue.
+// Tiles are NOT pre-shuffled here; the engine shuffles at serve time.
+// Tier letter lengths: T1=3 (CVC), T2=4-5 (blends/digraphs),
+// T3=~6 (two syllables), T4=6-8, T5=8-10 (showpieces).
+const WordsBank = (() => {
+  let wbCount = 0;
+  const wb = (tier, word, emoji, clue, hint, explain) => ({
+    id: 'w-t' + tier + '-' + String(++wbCount).padStart(3, '0'),
+    domain: 'words',
+    tier,
+    type: 'tiles',
+    prompt: 'Build the word!',
+    word,
+    emoji,
+    clue,
+    hint,
+    explain,
+  });
+  const spell = (word) =>
+    word + ' spells ' + word.toLowerCase() + ' — ' + word.toLowerCase().split('').join(', ') + '.';
+  const chunk = (word, parts) =>
+    word + ' — ' + parts.join(' + ') + ' makes ' + word.toLowerCase() + '.';
+  const h1a = 'Say each sound slowly, then pick its letter.';
+  const h1b = 'Stretch the word out like a rubber band.';
+  const h1c = 'Find the first sound, then the middle, then the end.';
+  const h2a = 'Listen for two letters that team up at the start.';
+  const h2b = 'Say the blend first, then the rest.';
+  const h3a = 'Clap the two beats, then build one beat at a time.';
+  const h3b = 'Break it into two chunks and sound out each.';
+  const h4a = 'Hunt for letter chunks you already know.';
+  const h4b = 'Find a little word hiding inside the big one.';
+  const h5a = 'Build it chunk by chunk, like beads on a string.';
+  const h5b = 'Say it slowly and listen for each beat.';
+  return {
+    1: [
+      wb(1, 'CAT', '🐱', 'A furry pet that says meow.', h1a, spell('CAT')),
+      wb(1, 'SUN', '☀️', 'It shines in the sky all day.', h1b, spell('SUN')),
+      wb(1, 'BUG', '🐞', 'A tiny crawling critter.', h1c, spell('BUG')),
+      wb(1, 'MAP', '🗺️', 'It shows you where to go.', h1a, spell('MAP')),
+      wb(1, 'DOG', '🐶', 'A pet that barks and wags its tail.', h1b, spell('DOG')),
+      wb(1, 'PIG', '🐷', 'A pink farm animal that says oink.', h1c, spell('PIG')),
+      wb(1, 'HAT', '🎩', 'You wear it on your head.', h1a, spell('HAT')),
+      wb(1, 'BED', '🛏️', 'You sleep in it at night.', h1b, spell('BED')),
+      wb(1, 'FOX', '🦊', 'A clever orange animal with a bushy tail.', h1c, spell('FOX')),
+      wb(1, 'CUP', '☕', 'You drink cocoa from it.', h1a, spell('CUP')),
+      wb(1, 'JAM', '🍓', 'Sweet strawberry spread for your toast.', h1b, spell('JAM')),
+      wb(1, 'WEB', '🕸️', 'A spider spins this.', h1c, spell('WEB')),
+    ],
+    2: [
+      wb(2, 'FROG', '🐸', 'A green hopper that says ribbit.', h2a, spell('FROG')),
+      wb(2, 'SHIP', '🚢', 'A big boat that sails the sea.', h2b, spell('SHIP')),
+      wb(2, 'STAR', '⭐', 'It twinkles in the night sky.', h2a, spell('STAR')),
+      wb(2, 'CHICK', '🐤', 'A fluffy yellow baby bird.', h2b, spell('CHICK')),
+      wb(2, 'DRUM', '🥁', 'You tap it to make a beat.', h2a, spell('DRUM')),
+      wb(2, 'SNAIL', '🐌', 'A slow critter that carries its shell.', h2b, spell('SNAIL')),
+      wb(2, 'CRAB', '🦀', 'A beach animal with pinchy claws.', h2a, spell('CRAB')),
+      wb(2, 'FISH', '🐟', 'It swims and breathes underwater.', h2b, spell('FISH')),
+      wb(2, 'SLED', '🛷', 'You ride it down a snowy hill.', h2a, spell('SLED')),
+      wb(2, 'WHALE', '🐋', 'The biggest animal in the ocean.', h2b, spell('WHALE')),
+      wb(2, 'PLANT', '🌱', 'It grows from a seed in soil.', h2a, spell('PLANT')),
+      wb(2, 'TRAIN', '🚂', 'It rides on tracks and says choo choo.', h2b, spell('TRAIN')),
+    ],
+    3: [
+      wb(3, 'RABBIT', '🐰', 'A long-eared hopper who loves carrots.', h3a, chunk('RABBIT', ['rab', 'bit'])),
+      wb(3, 'ROCKET', '🚀', 'It blasts off into space.', h3b, chunk('ROCKET', ['rock', 'et'])),
+      wb(3, 'GARDEN', '🌷', 'A place where flowers and veggies grow.', h3a, chunk('GARDEN', ['gar', 'den'])),
+      wb(3, 'BASKET', '🧺', 'You carry picnic snacks in it.', h3b, chunk('BASKET', ['bas', 'ket'])),
+      wb(3, 'KITTEN', '🐱', 'A baby cat.', h3a, chunk('KITTEN', ['kit', 'ten'])),
+      wb(3, 'MUFFIN', '🧁', 'A little cake you might eat for breakfast.', h3b, chunk('MUFFIN', ['muf', 'fin'])),
+      wb(3, 'WINTER', '❄️', 'The cold season with snow.', h3a, chunk('WINTER', ['win', 'ter'])),
+      wb(3, 'TURTLE', '🐢', 'It carries its home on its back.', h3b, chunk('TURTLE', ['tur', 'tle'])),
+      wb(3, 'DRAGON', '🐉', 'A storybook beast that breathes fire.', h3a, chunk('DRAGON', ['drag', 'on'])),
+      wb(3, 'PENCIL', '✏️', 'You write and draw with it.', h3b, chunk('PENCIL', ['pen', 'cil'])),
+      wb(3, 'POCKET', '👖', 'Jeans have one to hold tiny treasures.', h3a, chunk('POCKET', ['pock', 'et'])),
+    ],
+    4: [
+      wb(4, 'CASTLE', '🏰', 'A royal home with tall towers.', h4a, chunk('CASTLE', ['cas', 'tle'])),
+      wb(4, 'THUNDER', '⛈️', 'The big boom after lightning.', h4b, chunk('THUNDER', ['thun', 'der'])),
+      wb(4, 'WHISPER', '🤫', 'Talking in a very quiet voice.', h4a, chunk('WHISPER', ['whis', 'per'])),
+      wb(4, 'COURAGE', '🦁', 'Being brave even when you feel scared.', h4b, chunk('COURAGE', ['cour', 'age'])),
+      wb(4, 'CRYSTAL', '💎', 'A sparkly stone that catches the light.', h4a, chunk('CRYSTAL', ['crys', 'tal'])),
+      wb(4, 'BALANCE', '🤸', 'Holding steady on the beam.', h4b, chunk('BALANCE', ['bal', 'ance'])),
+      wb(4, 'JOURNEY', '🧭', 'A long trip to somewhere new.', h4a, chunk('JOURNEY', ['jour', 'ney'])),
+      wb(4, 'SPARKLE', '✨', 'What glitter does in the light.', h4b, chunk('SPARKLE', ['spar', 'kle'])),
+      wb(4, 'DOLPHIN', '🐬', 'A playful sea animal that leaps from waves.', h4a, chunk('DOLPHIN', ['dol', 'phin'])),
+      wb(4, 'MEADOW', '🌼', 'A grassy field full of flowers.', h4b, chunk('MEADOW', ['mead', 'ow'])),
+      wb(4, 'TUMBLE', '🤸', 'A roll or flip in gymnastics.', h4a, chunk('TUMBLE', ['tum', 'ble'])),
+    ],
+    5: [
+      wb(5, 'ADVENTURE', '🗺️', 'An exciting trip full of surprises.', h5a, chunk('ADVENTURE', ['ad', 'ven', 'ture'])),
+      wb(5, 'GYMNASTICS', '🤸', 'Flips, beams, and cartwheels — your favorite sport!', h5b, chunk('GYMNASTICS', ['gym', 'nas', 'tics'])),
+      wb(5, 'BUTTERFLY', '🦋', 'It starts as a caterpillar, then grows wings.', h5a, chunk('BUTTERFLY', ['but', 'ter', 'fly'])),
+      wb(5, 'CHAMPION', '🏆', 'The winner of a big event.', h5b, chunk('CHAMPION', ['cham', 'pi', 'on'])),
+      wb(5, 'TREASURE', '💰', 'Gold and jewels hidden in a chest.', h5a, chunk('TREASURE', ['trea', 'sure'])),
+      wb(5, 'CARTWHEEL', '🤸', 'A sideways flip with hands on the floor.', h5b, chunk('CARTWHEEL', ['cart', 'wheel'])),
+      wb(5, 'HANDSTAND', '🤸', 'Standing upside down on your hands.', h5a, chunk('HANDSTAND', ['hand', 'stand'])),
+      wb(5, 'KANGAROO', '🦘', 'A hopping animal with a belly pouch.', h5b, chunk('KANGAROO', ['kan', 'ga', 'roo'])),
+      wb(5, 'ELEPHANT', '🐘', 'A giant animal with a long trunk.', h5a, chunk('ELEPHANT', ['el', 'e', 'phant'])),
+      wb(5, 'MOUNTAIN', '⛰️', 'A giant rocky peak that touches the clouds.', h5b, chunk('MOUNTAIN', ['moun', 'tain'])),
+      wb(5, 'SOMERSAULT', '🤸', 'A head-over-heels roll.', h5a, chunk('SOMERSAULT', ['som', 'er', 'sault'])),
+      wb(5, 'WATERFALL', '💦', 'A river pouring off a cliff.', h5b, chunk('WATERFALL', ['wa', 'ter', 'fall'])),
+    ],
+  };
+})();
+
+// === src/content/rhymes.js ===
+// src/content/rhymes.js — rhyming bank. Correct answers are true phonetic
+// rhymes in General American English; eye-rhyme traps appear as distractors
+// at T2+ (never as correct answers).
+// T1: 3 choices, classic families. T2: 4 choices with eye-rhyme traps.
+// T3: pick the TWO that rhyme (answerIndices, length 2). T4: odd-one-out.
+// T5: rhyme riddles.
+const RhymesBank = (() => {
+  let rbCount = 0;
+  const rb = (tier, prompt, choices, answer, hint, explain) => {
+    const item = {
+      id: 'r-t' + tier + '-' + String(++rbCount).padStart(3, '0'),
+      domain: 'rhyme',
+      tier,
+      type: 'choice',
+      prompt,
+      hint,
+      explain,
+      choices,
+      bigChoices: false,
+    };
+    if (Array.isArray(answer)) item.answerIndices = answer;
+    else item.answerIndex = answer;
+    return item;
+  };
+  const ask = (w) => 'Which word rhymes with ' + w + '?';
+  const two = 'Tap the TWO words that rhyme!';
+  const odd = 'Which word does NOT rhyme with the others?';
+  const h1 = 'Say the endings out loud — which one matches?';
+  const h2 = 'Trust your ears, not your eyes.';
+  const h3 = 'Say each word and match the endings.';
+  const h4 = 'Three endings match — one does not.';
+  const h5 = 'The answer must rhyme AND fit the clue.';
+  return {
+    1: [
+      rb(1, ask('cat'), ['dog', 'hat', 'sun'], 1, h1, 'Hat rhymes with cat — both end with -at.'),
+      rb(1, ask('bug'), ['rug', 'fish', 'hen'], 0, h1, 'Rug rhymes with bug — both end with -ug.'),
+      rb(1, ask('cake'), ['dog', 'cup', 'snake'], 2, h1, 'Snake rhymes with cake — both end with -ake.'),
+      rb(1, ask('king'), ['ring', 'crown', 'frog'], 0, h1, 'Ring rhymes with king — both end with -ing.'),
+      rb(1, ask('hop'), ['run', 'top', 'mud'], 1, h1, 'Top rhymes with hop — both end with -op.'),
+      rb(1, ask('moon'), ['star', 'sock', 'spoon'], 2, h1, 'Spoon rhymes with moon — both end with -oon.'),
+      rb(1, ask('pig'), ['dig', 'hen', 'mud'], 0, h1, 'Dig rhymes with pig — both end with -ig.'),
+      rb(1, ask('bell'), ['drum', 'shell', 'song'], 1, h1, 'Shell rhymes with bell — both end with -ell.'),
+      rb(1, ask('day'), ['night', 'sun', 'play'], 2, h1, 'Play rhymes with day — both end with -ay.'),
+      rb(1, ask('goat'), ['boat', 'sheep', 'barn'], 0, h1, 'Boat rhymes with goat — both end with -oat.'),
+    ],
+    2: [
+      rb(2, ask('goat'), ['got', 'coat', 'goal', 'gate'], 1, h2, 'Coat rhymes with goat — listen: oat, oat!'),
+      rb(2, ask('one'), ['bone', 'sun', 'cone', 'on'], 1, h2, 'One says "wun" — it rhymes with sun!'),
+      rb(2, ask('said'), ['paid', 'maid', 'bed', 'sail'], 2, h2, 'Said sounds like "sed" — it rhymes with bed!'),
+      rb(2, ask('bear'), ['fear', 'ear', 'barn', 'chair'], 3, h2, 'Bear sounds like "bair" — it rhymes with chair!'),
+      rb(2, ask('come'), ['home', 'drum', 'dome', 'comb'], 1, h2, 'Come says "kum" — it rhymes with drum!'),
+      rb(2, ask('great'), ['meat', 'seat', 'late', 'green'], 2, h2, 'Great says "grate" — it rhymes with late!'),
+      rb(2, ask('blue'), ['glow', 'toe', 'hut', 'shoe'], 3, h2, 'Shoe rhymes with blue — both say "oo"!'),
+      rb(2, ask('love'), ['stove', 'glove', 'cove', 'leaf'], 1, h2, 'Glove rhymes with love — both say "uv"!'),
+      rb(2, ask('word'), ['cord', 'sword', 'ward', 'bird'], 3, h2, 'Word says "wurd" — it rhymes with bird!'),
+      rb(2, ask('head'), ['bead', 'sled', 'heat', 'hide'], 1, h2, 'Head says "hed" — it rhymes with sled!'),
+    ],
+    3: [
+      rb(3, two, ['snake', 'sun', 'cake', 'dog'], [0, 2], h3, 'Snake and cake rhyme — both end with -ake.'),
+      rb(3, two, ['lamp', 'light', 'kite', 'leaf'], [1, 2], h3, 'Light and kite rhyme — both end with -ite.'),
+      rb(3, two, ['chair', 'bird', 'bear', 'fish'], [0, 2], h3, 'Chair and bear rhyme — both say "air".'),
+      rb(3, two, ['blue', 'sock', 'glow', 'shoe'], [0, 3], h3, 'Blue and shoe rhyme — both say "oo".'),
+      rb(3, two, ['tune', 'star', 'sun', 'moon'], [0, 3], h3, 'Tune and moon rhyme — both say "oon".'),
+      rb(3, two, ['fox', 'hat', 'socks', 'bee'], [0, 2], h3, 'Fox and socks rhyme — both say "ocks".'),
+      rb(3, two, ['tail', 'fin', 'whale', 'sea'], [0, 2], h3, 'Tail and whale rhyme — both say "ail".'),
+      rb(3, two, ['car', 'sun', 'star', 'moon'], [0, 2], h3, 'Car and star rhyme — both say "ar".'),
+      rb(3, two, ['frog', 'log', 'pond', 'leaf'], [0, 1], h3, 'Frog and log rhyme — both end with -og.'),
+      rb(3, two, ['tree', 'ant', 'bee', 'bug'], [0, 2], h3, 'Tree and bee rhyme — both say "ee".'),
+    ],
+    4: [
+      rb(4, odd, ['cat', 'hat', 'bat', 'dog'], 3, h4, 'Dog ends with -og — the others end with -at.'),
+      rb(4, odd, ['bone', 'one', 'cone', 'stone'], 1, h4, 'One says "wun" — bone, cone, and stone rhyme.'),
+      rb(4, odd, ['cake', 'lake', 'cook', 'snake'], 2, h4, 'Cook says "ook" — the others end with -ake.'),
+      rb(4, odd, ['moon', 'sun', 'spoon', 'noon'], 1, h4, 'Sun says "un" — the others end with -oon.'),
+      rb(4, odd, ['said', 'bed', 'red', 'paid'], 3, h4, 'Paid says "payd" — said, bed, and red rhyme.'),
+      rb(4, odd, ['goat', 'coat', 'got', 'boat'], 2, h4, 'Got says "ot" — the others end with -oat.'),
+      rb(4, odd, ['blue', 'shoe', 'two', 'toe'], 3, h4, 'Toe says "oh" — blue, shoe, and two say "oo".'),
+      rb(4, odd, ['star', 'car', 'cow', 'far'], 2, h4, 'Cow says "ow" — the others say "ar".'),
+      rb(4, odd, ['king', 'kind', 'ring', 'sing'], 1, h4, 'Kind says "ind" — the others end with -ing.'),
+      rb(4, odd, ['bear', 'chair', 'ear', 'pear'], 2, h4, 'Ear says "eer" — the others say "air".'),
+    ],
+    5: [
+      rb(5, 'I rhyme with bear, and you can sit on me.', ['stool', 'chair', 'bed', 'sofa'], 1, h5, 'A chair! Chair rhymes with bear, and you sit on it.'),
+      rb(5, 'I rhyme with cake, and I slither in the grass.', ['lizard', 'worm', 'snake', 'frog'], 2, h5, 'A snake! Snake rhymes with cake and slithers.'),
+      rb(5, 'I rhyme with car, and I twinkle in the night sky.', ['star', 'moon', 'sun', 'cloud'], 0, h5, 'A star! Star rhymes with car and twinkles.'),
+      rb(5, 'I rhyme with fly, and I am big and blue above you.', ['roof', 'cloud', 'bird', 'sky'], 3, h5, 'The sky! Sky rhymes with fly.'),
+      rb(5, 'I rhyme with moon, and you eat soup with me.', ['fork', 'spoon', 'bowl', 'cup'], 1, h5, 'A spoon! Spoon rhymes with moon.'),
+      rb(5, 'I rhyme with fox, and you keep toys inside me.', ['box', 'bag', 'chest', 'bin'], 0, h5, 'A box! Box rhymes with fox.'),
+      rb(5, 'I rhyme with whale, and I help a boat catch the wind.', ['anchor', 'oar', 'sail', 'rope'], 2, h5, 'A sail! Sail rhymes with whale.'),
+      rb(5, 'I rhyme with king, and you wear me on your finger.', ['watch', 'crown', 'ring', 'glove'], 2, h5, 'A ring! Ring rhymes with king.'),
+      rb(5, 'I rhyme with night, and I fly on a string.', ['kite', 'bird', 'plane', 'flag'], 0, h5, 'A kite! Kite rhymes with night.'),
+      rb(5, 'I rhyme with bug, and you sip warm cocoa from me.', ['cup', 'glass', 'mug', 'bowl'], 2, h5, 'A mug! Mug rhymes with bug.'),
+    ],
+  };
+})();
+
+// === src/content/mathgen.js ===
+// src/content/mathgen.js — procedural arithmetic generator.
+// Deterministic given the injected rng (() => float in [0,1)).
+// Distractors come from plausible slips: ±1, ±10, digit-swap, dropped-regroup.
+// Always 3 distractors: unique, >= 0, != answer.
+// T1: a+b <= 10. T2: sums <= 20, subtraction within 10.
+// T3: subtraction within 20 (start 11-20; T2 owns within-10), three addends <= 20.
+// T4: two-digit + one-digit (no regroup), missing addend within 20.
+// T5: two-digit ± two-digit (simple regrouping), doubles/halves, groups-of.
+const MathGen = (() => {
+  const ri = (rng, lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
+  const digitSwap = (n) => {
+    if (n < 10 || n > 99) return null;
+    const t = Math.floor(n / 10);
+    const o = n % 10;
+    return t === o ? null : o * 10 + t;
+  };
+  const shuffleInPlace = (rng, arr) => {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const tmp = arr[i];
+      arr[i] = arr[j];
+      arr[j] = tmp;
+    }
+    return arr;
+  };
+  const distractorsFor = (rng, answer, extras, exclude) => {
+    const banned = exclude || [];
+    const pool = [];
+    const push = (v) => {
+      if (Number.isInteger(v) && v >= 0 && v !== answer && banned.indexOf(v) === -1 && pool.indexOf(v) === -1) pool.push(v);
+    };
+    (extras || []).forEach(push);
+    push(answer + 1);
+    push(answer - 1);
+    push(answer + 10);
+    push(answer - 10);
+    push(digitSwap(answer));
+    shuffleInPlace(rng, pool);
+    const picked = pool.slice(0, 3);
+    let k = 2;
+    while (picked.length < 3) {
+      const v = answer + k;
+      if (v >= 0 && v !== answer && banned.indexOf(v) === -1 && picked.indexOf(v) === -1) picked.push(v);
+      k += 1;
+    }
+    return picked;
+  };
+  const makeItem = (rng, tier, kind, idPart, prompt, answer, extras, hint, explain, big, exclude) => {
+    const choices = distractorsFor(rng, answer, extras, exclude).map(String);
+    const answerIndex = Math.floor(rng() * (choices.length + 1));
+    choices.splice(answerIndex, 0, String(answer));
+    return {
+      id: 'm-t' + tier + '-' + kind + '-' + idPart,
+      domain: 'math',
+      tier,
+      type: 'choice',
+      prompt,
+      hint,
+      explain,
+      choices,
+      answerIndex,
+      bigChoices: !!big,
+      answer, // internal: lets validators verify without parsing the prompt
+    };
+  };
+  const genAdd = (rng, tier, maxSum) => {
+    const a = ri(rng, 1, maxSum - 1);
+    const b = ri(rng, 1, maxSum - a);
+    const ans = a + b;
+    return makeItem(
+      rng, tier, 'add', a + '-' + b,
+      a + ' + ' + b + ' = ?', ans, [],
+      'Count up from the bigger number.',
+      a + ' + ' + b + ' = ' + ans + ' — count up to check!'
+    );
+  };
+  const genSub = (rng, tier, minStart, maxStart) => {
+    const a = ri(rng, minStart, maxStart);
+    const b = ri(rng, 1, a - 1);
+    const ans = a - b;
+    return makeItem(
+      rng, tier, 'sub', a + '-' + b,
+      a + ' − ' + b + ' = ?', ans, [],
+      'Count back on your fingers, slow and steady.',
+      a + ' − ' + b + ' = ' + ans + ' — count back to check!'
+    );
+  };
+  const genThree = (rng) => {
+    const a = ri(rng, 1, 8);
+    const b = ri(rng, 1, 8);
+    const c = ri(rng, 1, Math.max(1, 20 - a - b));
+    const ans = a + b + c;
+    return makeItem(
+      rng, 3, 'three', a + '-' + b + '-' + c,
+      a + ' + ' + b + ' + ' + c + ' = ?', ans, [],
+      'Add the first two, then add the last.',
+      a + ' + ' + b + ' + ' + c + ' = ' + ans + '. Step by step!'
+    );
+  };
+  const genTwoPlusOne = (rng) => {
+    const tens = ri(rng, 1, 9);
+    const ones = ri(rng, 0, 8);
+    const t = tens * 10 + ones;
+    const o = ri(rng, 1, 9 - ones);
+    const ans = t + o;
+    return makeItem(
+      rng, 4, 'big1', t + '-' + o,
+      t + ' + ' + o + ' = ?', ans, [],
+      'Only the ones change — add those first.',
+      t + ' + ' + o + ' = ' + ans + '. Tens stay, ones grow!'
+    );
+  };
+  const genMissing = (rng) => {
+    const total = ri(rng, 6, 20);
+    const known = ri(rng, 1, total - 1);
+    const ans = total - known;
+    // distractors must never equal the visible known/total numbers, or the
+    // answer could be ruled out by copying numbers straight from the prompt
+    return makeItem(
+      rng, 4, 'miss', known + '-' + total,
+      '▢ + ' + known + ' = ' + total + '  What goes in the box?', ans, [],
+      'Count up from the number to the total.',
+      ans + ' + ' + known + ' = ' + total + ' — ' + ans + ' fills the box!',
+      false, [known, total]
+    );
+  };
+  const genBigAdd = (rng) => {
+    const a = ri(rng, 10, 89);
+    const b = ri(rng, 10, 99 - a);
+    const ans = a + b;
+    const extras = [];
+    if ((a % 10) + (b % 10) >= 10) extras.push(ans - 10); // dropped the carry
+    return makeItem(
+      rng, 5, 'badd', a + '-' + b,
+      a + ' + ' + b + ' = ?', ans, extras,
+      'Add the tens, then add the ones.',
+      a + ' + ' + b + ' = ' + ans + '. Tens, then ones!'
+    );
+  };
+  const genBigSub = (rng) => {
+    const a = ri(rng, 21, 99);
+    const b = ri(rng, 10, a - 1);
+    const ans = a - b;
+    const extras = [];
+    if (a % 10 < b % 10) {
+      // classic slip: take the small ones digit from the big one, skip the borrow
+      extras.push((Math.floor(a / 10) - Math.floor(b / 10)) * 10 + Math.abs((a % 10) - (b % 10)));
+    }
+    return makeItem(
+      rng, 5, 'bsub', a + '-' + b,
+      a + ' − ' + b + ' = ?', ans, extras,
+      'Take away the tens, then the ones.',
+      a + ' − ' + b + ' = ' + ans + '. Tens, then ones!'
+    );
+  };
+  const genDouble = (rng) => {
+    const n = ri(rng, 2, 12);
+    const ans = n + n;
+    return makeItem(
+      rng, 5, 'dbl', String(n),
+      'Double ' + n + ' = ?', ans, [],
+      'A double is the number plus itself.',
+      'Double ' + n + ' is ' + ans + ' — ' + n + ' plus ' + n + '!'
+    );
+  };
+  const genHalf = (rng) => {
+    const half = ri(rng, 1, 10);
+    const n = half * 2;
+    return makeItem(
+      rng, 5, 'half', String(n),
+      'Half of ' + n + ' = ?', half, [],
+      'Split the number into two matching parts.',
+      'Half of ' + n + ' is ' + half + ' — two equal parts!'
+    );
+  };
+  const groupEmojis = ['🍎', '⭐', '🐚', '🍓', '🐠'];
+  const genGroups = (rng) => {
+    const g = ri(rng, 2, 4);
+    const per = ri(rng, 2, 5);
+    const emo = groupEmojis[ri(rng, 0, groupEmojis.length - 1)];
+    const ans = g * per;
+    return makeItem(
+      rng, 5, 'grp', g + '-' + per + '-' + emo.codePointAt(0).toString(16),
+      g + ' groups of ' + emo.repeat(per) + ' = ?', ans, [],
+      'Count one group, then skip-count the rest.',
+      g + ' groups of ' + per + ' makes ' + ans + '!',
+      true
+    );
+  };
+  const generate = (tier, rng) => {
+    const t = Math.max(1, Math.min(5, Math.round(tier)));
+    if (t === 1) return genAdd(rng, 1, 10);
+    if (t === 2) return rng() < 0.5 ? genAdd(rng, 2, 20) : genSub(rng, 2, 2, 10);
+    if (t === 3) return rng() < 0.5 ? genSub(rng, 3, 11, 20) : genThree(rng);
+    if (t === 4) return rng() < 0.5 ? genTwoPlusOne(rng) : genMissing(rng);
+    const r = rng();
+    if (r < 0.25) return genBigAdd(rng);
+    if (r < 0.5) return genBigSub(rng);
+    if (r < 0.7) return genDouble(rng);
+    if (r < 0.85) return genHalf(rng);
+    return genGroups(rng);
+  };
+  return { generate };
+})();
+
+// === src/content/patterns.js ===
+// src/content/patterns.js — pattern bank. Every item has exactly ONE
+// defensible answer; distractors are drawn from outside the pattern or
+// from relation types that cannot complete it.
+// T1: AB/ABB emoji continuation. T2: AAB/ABC + growing count.
+// T3: number sequences (+2, +5, +10, -1). T4: verbal analogies.
+// T5: odd-one-out with category reasoning + doubling sequences.
+const PatternsBank = (() => {
+  let pbCount = 0;
+  const pb = (tier, prompt, choices, answerIndex, hint, explain, big) => ({
+    id: 'p-t' + tier + '-' + String(++pbCount).padStart(3, '0'),
+    domain: 'patterns',
+    tier,
+    type: 'choice',
+    prompt,
+    hint,
+    explain,
+    choices,
+    answerIndex,
+    bigChoices: !!big,
+  });
+  const next = (seq) => seq + ' — what comes next?';
+  const odd = 'Which one does not belong?';
+  const h1 = 'Say the pattern out loud — what repeats?';
+  const h2 = 'Chant the pattern and feel the beat.';
+  const h2g = 'Count how many are in each group.';
+  const h3 = 'Check how much the numbers jump each time.';
+  const h4 = 'Think how the first two go together.';
+  const h5o = 'Find the group three share — one does not fit.';
+  const h5d = 'Compare each number with the one before.';
+  return {
+    1: [
+      pb(1, next('🌟 🌙 🌟 🌙 🌟'), ['🌙', '🌟', '☁️', '🌈'], 0, h1, 'Moon! The pattern repeats star, moon, star, moon.', true),
+      pb(1, next('🐸 🦋 🐸 🦋 🐸'), ['🐸', '🦋', '🌸', '🐢'], 1, h1, 'Butterfly! It goes frog, butterfly, frog, butterfly.', true),
+      pb(1, next('🍎 🍌 🍌 🍎 🍌 🍌 🍎'), ['🍇', '🍌', '🍎', '🍓'], 1, h1, 'Banana! The pattern is apple, banana, banana.', true),
+      pb(1, next('❤️ 💛 ❤️ 💛 ❤️'), ['💚', '💙', '💛', '❤️'], 2, h1, 'Yellow heart! It goes red, yellow, red, yellow.', true),
+      pb(1, next('⭐ 🌊 🌊 ⭐ 🌊 🌊 ⭐'), ['⭐', '🐚', '🌊', '🐟'], 2, h1, 'Wave! The pattern is star, wave, wave.', true),
+      pb(1, next('🐝 🌼 🐝 🌼 🐝'), ['🍄', '🌼', '🐝', '🌳'], 1, h1, 'Flower! It goes bee, flower, bee, flower.', true),
+      pb(1, next('🐧 ❄️ ❄️ 🐧 ❄️ ❄️ 🐧'), ['❄️', '🐧', '⛄', '🧊'], 0, h1, 'Snowflake! The pattern is penguin, snowflake, snowflake.', true),
+      pb(1, next('🦊 🍄 🦊 🍄 🦊'), ['🦊', '🌰', '🍄', '🍂'], 2, h1, 'Mushroom! It goes fox, mushroom, fox, mushroom.', true),
+      pb(1, next('💎 ✨ ✨ 💎 ✨ ✨ 💎'), ['💎', '🌙', '⭐', '✨'], 3, h1, 'Sparkle! The pattern is gem, sparkle, sparkle.', true),
+      pb(1, next('🐢 🐠 🐢 🐠 🐢'), ['🐠', '🐢', '🦀', '🐬'], 0, h1, 'Fish! It goes turtle, fish, turtle, fish.', true),
+    ],
+    2: [
+      pb(2, next('🐸 🐸 🦋 🐸 🐸 🦋 🐸 🐸'), ['🦋', '🐸', '🌸', '🐢'], 0, h2, 'Butterfly! The beat is frog, frog, butterfly.', true),
+      pb(2, next('⭐ ⭐ 🌙 ⭐ ⭐ 🌙 ⭐ ⭐'), ['⭐', '🌙', '☁️', '☀️'], 1, h2, 'Moon! The beat is star, star, moon.', true),
+      pb(2, next('🍎 🍌 🍇 🍎 🍌 🍇 🍎'), ['🍇', '🍎', '🍌', '🍓'], 2, h2, 'Banana! It goes apple, banana, grape, again.', true),
+      pb(2, next('🐶 🐱 🐭 🐶 🐱 🐭 🐶'), ['🐭', '🐱', '🐶', '🐰'], 1, h2, 'Cat! It goes dog, cat, mouse, again.', true),
+      pb(2, next('❤️ 💛 💚 ❤️ 💛 💚 ❤️'), ['💚', '❤️', '💙', '💛'], 3, h2, 'Yellow heart! It goes red, yellow, green, again.', true),
+      pb(2, next('🌟 🌟🌟 🌟🌟🌟'), ['🌟🌟', '🌟🌟🌟🌟', '🌟🌟🌟', '🌟'], 1, h2g, 'Four stars! The group grows by one each time.', true),
+      pb(2, next('🐠 🐠🐠 🐠🐠🐠'), ['🐠🐠🐠🐠', '🐠🐠', '🐠', '🐠🐠🐠'], 0, h2g, 'Four fish! The group grows by one each time.', true),
+      pb(2, next('🌲 🌲 🦊 🌲 🌲 🦊 🌲 🌲'), ['🌲', '🍄', '🦊', '🦔'], 2, h2, 'Fox! The beat is tree, tree, fox.', true),
+      pb(2, next('❄️❄️ ❄️❄️❄️ ❄️❄️❄️❄️'), ['❄️❄️❄️', '❄️❄️❄️❄️❄️', '❄️❄️❄️❄️', '❄️❄️❄️❄️❄️❄️'], 1, h2g, 'Five snowflakes! The group grows by one each time.', true),
+      pb(2, next('🌞 🌧️ 🌈 🌞 🌧️ 🌈 🌞'), ['🌈', '🌧️', '🌞', '⛄'], 1, h2, 'Rain! It goes sun, rain, rainbow, again.', true),
+    ],
+    3: [
+      pb(3, next('2, 4, 6, 8'), ['10', '9', '11', '12'], 0, h3, '10 comes next — the numbers count up by 2.'),
+      pb(3, next('5, 10, 15, 20'), ['21', '25', '24', '30'], 1, h3, '25 comes next — the numbers count up by 5.'),
+      pb(3, next('10, 20, 30, 40'), ['60', '41', '50', '45'], 2, h3, '50 comes next — the numbers count up by 10.'),
+      pb(3, next('9, 8, 7, 6'), ['5', '4', '7', '3'], 0, h3, '5 comes next — the numbers count down by 1.'),
+      pb(3, next('1, 3, 5, 7'), ['8', '9', '10', '11'], 1, h3, '9 comes next — the numbers count up by 2.'),
+      pb(3, next('3, 8, 13, 18'), ['22', '28', '24', '23'], 3, h3, '23 comes next — the numbers count up by 5.'),
+      pb(3, next('12, 22, 32, 42'), ['43', '52', '50', '62'], 1, h3, '52 comes next — the numbers count up by 10.'),
+      pb(3, next('15, 14, 13, 12'), ['11', '10', '13', '9'], 0, h3, '11 comes next — the numbers count down by 1.'),
+      pb(3, next('10, 12, 14, 16'), ['17', '19', '18', '20'], 2, h3, '18 comes next — the numbers count up by 2.'),
+      pb(3, next('5, 15, 25, 35'), ['44', '55', '46', '45'], 3, h3, '45 comes next — the numbers count up by 10.'),
+    ],
+    4: [
+      pb(4, 'Kitten is to cat as puppy is to … ?', ['bone', 'dog', 'bark', 'tail'], 1, h4, 'Dog! A puppy grows into a dog.'),
+      pb(4, 'Bird is to nest as bee is to … ?', ['flower', 'wing', 'hive', 'sting'], 2, h4, 'Hive! A bee lives in a hive.'),
+      pb(4, 'Hand is to glove as foot is to … ?', ['sock', 'toe', 'arm', 'hat'], 0, h4, 'Sock! A sock covers a foot like a glove covers a hand.'),
+      pb(4, 'Day is to sun as night is to … ?', ['cloud', 'rain', 'bed', 'moon'], 3, h4, 'Moon! The moon lights the night sky.'),
+      pb(4, 'Big is to little as hot is to … ?', ['cold', 'sun', 'soup', 'fire'], 0, h4, 'Cold! Hot and cold are opposites.'),
+      pb(4, 'Fish is to swim as bird is to … ?', ['nest', 'fly', 'egg', 'feather'], 1, h4, 'Fly! Fish swim and birds fly.'),
+      pb(4, 'Bear is to cub as dog is to … ?', ['puppy', 'kitten', 'bone', 'collar'], 0, h4, 'Puppy! A baby dog is a puppy.'),
+      pb(4, 'Car is to road as train is to … ?', ['wheel', 'horn', 'track', 'station'], 2, h4, 'Track! A train travels on a track.'),
+      pb(4, 'Winter is to cold as summer is to … ?', ['hot', 'snow', 'beach', 'rain'], 0, h4, 'Hot! Winter feels cold and summer feels hot.'),
+      pb(4, 'Caterpillar is to butterfly as tadpole is to … ?', ['pond', 'frog', 'fish', 'hop'], 1, h4, 'Frog! A tadpole grows into a frog.'),
+    ],
+    5: [
+      pb(5, odd, ['red', 'blue', 'green', 'seven'], 3, h5o, 'Seven is a number — the rest are colors.'),
+      pb(5, odd, ['cat', 'chair', 'dog', 'horse'], 1, h5o, 'A chair is not an animal.'),
+      pb(5, odd, ['apple', 'banana', 'ball', 'grape'], 2, h5o, 'A ball is a toy — the rest are fruits.'),
+      pb(5, odd, ['circle', 'purple', 'square', 'triangle'], 1, h5o, 'Purple is a color — the rest are shapes.'),
+      pb(5, odd, ['milk', 'juice', 'sandwich', 'water'], 2, h5o, 'A sandwich is food — the rest are drinks.'),
+      pb(5, odd, ['eyes', 'spoon', 'ears', 'nose'], 1, h5o, 'A spoon is for eating — the rest are body parts.'),
+      pb(5, odd, ['rain', 'snow', 'pizza', 'wind'], 2, h5o, 'Pizza is food — the rest are weather.'),
+      pb(5, odd, ['cartwheel', 'pillow', 'handstand', 'somersault'], 1, h5o, 'A pillow is not a gymnastics move.'),
+      pb(5, next('2, 4, 8, 16'), ['32', '24', '20', '18'], 0, h5d, '32 comes next — each number doubles.'),
+      pb(5, next('1, 2, 4, 8'), ['12', '16', '10', '9'], 1, h5d, '16 comes next — each number doubles.'),
+      pb(5, next('3, 6, 12, 24'), ['30', '27', '48', '36'], 2, h5d, '48 comes next — each number doubles: 24 plus 24.'),
+    ],
+  };
+})();
+
+// === src/content/reading.js ===
+// src/content/reading.js — reading comprehension bank.
+// 40 passages (8 per tier), 2 questions each. Themes: kingdom, gymnastics,
+// animals. Every answer is derivable from the passage alone.
+// Anti-tell: engine shuffles positions; the correct answer is never uniquely
+// longest, and whenever the correct answer echoes passage wording at least
+// one distractor echoes the passage too (validator-enforced).
+const ReadingBank = (() => {
+  let rdCount = 0;
+  const bank = { 1: [], 2: [], 3: [], 4: [], 5: [] };
+  const rd = (tier, passage, prompt, choices, answerIndex, hint, explain) => {
+    bank[tier].push({
+      id: 'rd-t' + tier + '-' + String(++rdCount).padStart(3, '0'),
+      domain: 'reading',
+      tier,
+      type: 'choice',
+      prompt,
+      hint,
+      explain,
+      passage,
+      choices,
+      answerIndex,
+      bigChoices: false,
+    });
+  };
+  const hLook = 'The answer hides in the story — look back!';
+  const hDetail = 'Reread the story and hunt for that detail.';
+  const hOrder = 'Look for order words like first and next.';
+  const hMain = 'Think about the whole story, not one part.';
+  const hFeel = 'Look for clues about her body and face.';
+  const hClue = 'Find the sentence that shows it happening.';
+  const hVocab = 'Reread that sentence and picture what happens.';
+  const hTwist = 'Reread the ending — it holds a surprise.';
+
+  // ---- Tier 1: two sentences, literal questions ----
+  const p1 = 'Charlie found a pink crystal by the path. She put it in her bag.';
+  rd(1, p1, 'What did Charlie find?',
+    ['a crystal', 'a tiny frog', 'a stony path'], 0,
+    hLook, 'She found a pink crystal by the path.');
+  rd(1, p1, 'Where did Charlie put the crystal?',
+    ['in her bag', 'in her shoe', 'by the path'], 0,
+    hLook, 'She put the crystal in her bag.');
+
+  const p2 = 'Charlie did a cartwheel on the soft mat. Her coach clapped two times.';
+  rd(1, p2, 'What did Charlie do?',
+    ['a cartwheel', 'a high jump', 'a soft nap'], 0,
+    hLook, 'Charlie did a cartwheel on the mat.');
+  rd(1, p2, 'How many times did the coach clap?',
+    ['two', 'four', 'ten'], 0,
+    hLook, 'Her coach clapped two times.');
+
+  const p3 = 'A little fox slept under a big tree. Snow fell softly on its red tail.';
+  rd(1, p3, 'Where did the fox sleep?',
+    ['under a tree', 'on a little hill', 'next to a river'], 0,
+    hLook, 'The fox slept under a big tree.');
+  rd(1, p3, "What fell on the fox's tail?",
+    ['snow', 'rain', 'little leaves'], 0,
+    hLook, 'Snow fell softly on its red tail.');
+
+  // ---- Tier 2: three sentences, detail questions ----
+  const p4 = 'The Crystal Castle has four tall towers. Each tower holds one shiny flag. The flags are purple and gold.';
+  rd(2, p4, 'How many towers does the castle have?',
+    ['four towers', 'three towers', 'five towers', 'six towers'], 0,
+    hDetail, 'The castle has four tall towers.');
+  rd(2, p4, 'What colors are the flags?',
+    ['purple and gold', 'red and blue', 'gold and green', 'pink and silver'], 0,
+    hDetail, 'The flags are purple and gold.');
+
+  const p5 = 'Charlie practiced on the balance beam. First she walked slowly across it. Then she did a tiny hop at the end.';
+  rd(2, p5, 'What did Charlie do at the end?',
+    ['a tiny hop', 'a slow walk', 'a big flip', 'a quick wave'], 0,
+    hDetail, 'She did a tiny hop at the end.');
+  rd(2, p5, 'How did Charlie walk at first?',
+    ['slowly', 'quickly', 'with a tiny hop', 'sideways'], 0,
+    hDetail, 'First she walked slowly across the beam.');
+
+  const p6 = 'Pebble the penguin loves cold water. Every morning he slides down an icy hill. Then he splashes into the sea with his friends.';
+  rd(2, p6, 'What does Pebble slide down?',
+    ['an icy hill', 'a sandy dune', 'a green slide', 'a snowy roof'], 0,
+    hDetail, 'Pebble slides down an icy hill.');
+  rd(2, p6, 'Who splashes into the sea with Pebble?',
+    ['his friends', 'his mother', 'three cold seals', 'one big whale'], 0,
+    hDetail, 'He splashes in with his friends.');
+
+  // ---- Tier 3: 4-5 sentences, sequence / main idea ----
+  const p7 = 'Charlie followed the winding path to Word Woods. First she crossed a wobbly bridge. Next she hopped over three mossy stones. At last she reached the singing trees, and they waved their branches hello.';
+  rd(3, p7, 'What did Charlie do first?',
+    ['crossed a wobbly bridge', 'hopped over mossy stones', 'reached the singing trees', 'waved at the branches'], 0,
+    hOrder, 'First she crossed a wobbly bridge.');
+  rd(3, p7, 'What is this story mostly about?',
+    ["Charlie's trip to Word Woods", 'how wobbly bridges get built', 'a song the trees like to sing', 'three stones by a river'], 0,
+    hMain, "It tells about Charlie's trip to Word Woods.");
+
+  const p8 = 'On Saturday Charlie went to the big gym. She stretched first so her muscles felt warm. Then she practiced cartwheels until they felt strong. Before going home, she took one giant bow.';
+  rd(3, p8, 'What did Charlie do before cartwheels?',
+    ['she stretched', 'she took a bow', 'she went home', 'she ate a snack'], 0,
+    hOrder, 'She stretched first to warm up her muscles.');
+  rd(3, p8, 'What did Charlie do last at the gym?',
+    ['took a giant bow', 'practiced cartwheels', 'stretched her muscles', 'opened the gym door'], 0,
+    hOrder, 'Before going home, she took one giant bow.');
+
+  const p9 = 'Coral the turtle wanted to see the top of the reef. She paddled up past the tall orange seaweed. She rested on a smooth rock halfway. Finally she reached the top and watched the sun sparkle on the waves.';
+  rd(3, p9, 'Where did Coral rest?',
+    ['on a smooth rock', 'on the orange seaweed', 'at the top of the reef', 'under the waves'], 0,
+    hOrder, 'She rested on a smooth rock halfway up.');
+  rd(3, p9, 'What is this story mostly about?',
+    ["Coral's climb up the reef", 'a very sunny day at the beach', 'how seaweed gets so tall', 'a rock under the sea'], 0,
+    hMain, "It is about Coral's climb to the top.");
+
+  // ---- Tier 4: inference ----
+  const p10 = 'Charlie peeked into the dark cave. Her hands felt shaky and her steps were slow. Then she remembered her companions cheering, took a big breath, and walked in.';
+  rd(4, p10, 'How did Charlie feel at first?',
+    ['nervous', 'cheerful', 'hungry', 'silly'], 0,
+    hFeel, 'Shaky hands and slow steps show she felt nervous.');
+  rd(4, p10, 'What helped Charlie walk into the cave?',
+    ['thinking of friends', 'a very bright lantern', 'a loud marching song', 'a map of the deep cave'], 0,
+    hClue, 'Remembering her cheering companions helped her feel brave.');
+
+  const p11 = 'Charlie wobbled on the beam and hopped off before the end. She frowned for a moment. Then she climbed right back up and tried again, and this time her feet stayed steady.';
+  rd(4, p11, 'How did Charlie feel after she hopped off?',
+    ['a little sad', 'very cheerful', 'quite sleepy', 'super hungry'], 0,
+    hFeel, 'Her frown shows she felt a little sad.');
+  rd(4, p11, 'How do you know Charlie kept trying?',
+    ['she climbed back up', 'she frowned a moment', 'she hopped off early', 'she stayed on the floor'], 0,
+    hClue, 'She climbed right back up and tried again.');
+
+  const p12 = 'Sage the owl blinked at the bright morning sun. He pulled his wing over his eyes and yawned three times. Soon his head drooped onto his soft feathers.';
+  rd(4, p12, 'How was Sage feeling?',
+    ['sleepy', 'grumpy', 'playful', 'hungry'], 0,
+    hFeel, 'Yawning and drooping show Sage felt sleepy.');
+  rd(4, p12, 'Which clue shows Sage was ready to sleep?',
+    ['he yawned three times', 'he blinked at the sun', 'he has soft feathers', 'the morning sun was bright'], 0,
+    hClue, 'Yawning three times shows he was ready to sleep.');
+
+  // ---- Tier 5: vocabulary in context, twist endings ----
+  const p13 = "The golem guarded the gate, looking grumpy as ever. But when Charlie waved, the golem's frown melted into a grin. 'Nobody ever waves at me,' he said, and he opened the gate himself.";
+  rd(5, p13, "What does 'melted into a grin' mean?",
+    ['his frown became a smile', 'his grumpy face dripped like ice', 'his cheeks got very hot', 'he licked an ice pop'], 0,
+    hVocab, 'His frown slowly turned into a smile.');
+  rd(5, p13, 'Why did the golem open the gate?',
+    ["Charlie's wave made him glad", 'Charlie pushed it open very hard', 'he wanted a nap inside', 'a key turned by itself'], 0,
+    hTwist, 'The friendly wave made the golem glad.');
+
+  const p14 = "Coach May said Charlie's routine was flawless — every flip landed without a single slip. Charlie grinned and whispered her secret: she had practiced in her socks every night, sliding on the kitchen floor.";
+  rd(5, p14, "What does 'flawless' mean in this story?",
+    ['without any slips', 'with lots of stumbles', 'very slow and quiet', 'much too loud'], 0,
+    hVocab, 'Flawless means without any slips at all.');
+  rd(5, p14, "What was Charlie's secret?",
+    ['practicing on the kitchen floor', 'Coach May training her at night', 'wearing brand new sparkly shoes', 'holding her breath during flips'], 0,
+    hTwist, 'She practiced in socks on the kitchen floor.');
+
+  const p15 = 'Greta the goat followed Charlie all day, nibbling at her backpack. Charlie thought Greta wanted her sandwich. But when the zipper popped open, Greta pulled out the map and laid it gently on the grass — she wanted to come along on the adventure.';
+  rd(5, p15, 'What did Greta really want?',
+    ['to join the adventure', 'to eat the whole sandwich', 'to chew the zipper', 'to nap on the grass'], 0,
+    hTwist, 'Greta wanted to come along on the adventure.');
+  rd(5, p15, 'What did Charlie think Greta wanted at first?',
+    ['her sandwich', 'her map', 'her backpack', 'her crystal'], 0,
+    hDetail, 'Charlie thought Greta wanted her sandwich.');
+
+  // ---- Tier 1 (continued): two sentences, literal questions ----
+  const p16 = 'Nova the unicorn crunched a red apple for breakfast. Then she drank from the cool silver stream.';
+  rd(1, p16, 'What did Nova eat for breakfast?',
+    ['an apple', 'a cool berry', 'a carrot'], 0,
+    hLook, 'Nova crunched a red apple for breakfast.');
+  rd(1, p16, 'Where did Nova drink from?',
+    ['the stream', 'the pond', 'the silver sea'], 0,
+    hLook, 'She drank from the cool silver stream.');
+
+  const p17 = 'Charlie pointed her toes in ballet class. Her teacher gave her a gold star sticker.';
+  rd(1, p17, 'What did Charlie point?',
+    ['her toes', 'her elbow', 'her gold shoes'], 0,
+    hLook, 'She pointed her toes in ballet class.');
+  rd(1, p17, 'What did the teacher give Charlie?',
+    ['a sticker', 'a gold ribbon', 'a hug'], 0,
+    hLook, 'Her teacher gave her a gold star sticker.');
+
+  const p18 = 'A bunny hopped across the snowy field. It left ten little footprints behind.';
+  rd(1, p18, 'What hopped across the field?',
+    ['a bunny', 'a deer', 'a snowy owl'], 0,
+    hLook, 'A bunny hopped across the snowy field.');
+  rd(1, p18, 'How many footprints did the bunny leave?',
+    ['ten', 'six', 'two'], 0,
+    hLook, 'It left ten little footprints.');
+
+  const p19 = 'Pebble the penguin found a blue scarf on the ice. He wore it on his head like a little hat.';
+  rd(1, p19, 'What did Pebble find?',
+    ['a scarf', 'a mitten', 'a blue boot'], 0,
+    hLook, 'Pebble found a blue scarf on the ice.');
+  rd(1, p19, 'Where did Pebble wear the scarf?',
+    ['on his head', 'on his foot', 'on his little wing'], 0,
+    hLook, 'He wore it on his head like a hat.');
+
+  const p20 = 'Charlie rolled like a log down the grassy hill. Fern the fox rolled right behind her.';
+  rd(1, p20, 'Who rolled behind Charlie?',
+    ['Fern the fox', 'Sage the owl', 'a grassy bug'], 0,
+    hLook, 'Fern the fox rolled right behind her.');
+  rd(1, p20, 'How did Charlie roll down the hill?',
+    ['like a log', 'like a ball', 'like a grassy wheel'], 0,
+    hLook, 'She rolled like a log down the hill.');
+
+  // ---- Tier 2 (continued): three sentences, detail questions ----
+  const p21 = 'Sage the owl keeps three books in his nest. One book is all about the stars. He reads it every night before bed.';
+  rd(2, p21, 'How many books does Sage keep?',
+    ['three books', 'two books', 'four books', 'seven books'], 0,
+    hDetail, 'Sage keeps three books in his nest.');
+  rd(2, p21, 'What is one book about?',
+    ['the stars', 'the sea', 'warm nests', 'tall trees'], 0,
+    hDetail, 'One book is all about the stars.');
+
+  const p22 = 'Charlie practiced her split at the gym. She slid down a little lower each day. On Friday her legs finally touched the floor.';
+  rd(2, p22, 'What did Charlie practice?',
+    ['her split', 'her flip', 'her little dance', 'her floor bow'], 0,
+    hDetail, 'She practiced her split at the gym.');
+  rd(2, p22, 'What happened on Friday?',
+    ['her legs touched the floor', 'she slid down off the beam', 'her gym closed early', 'she did a little flip'], 0,
+    hDetail, 'On Friday her legs finally touched the floor.');
+
+  const p23 = 'Bubbles the fish swims through a coral ring every morning. The ring is round and pink. Swimming through it always makes her giggle.';
+  rd(2, p23, 'When does Bubbles swim through the ring?',
+    ['every morning', 'every night', 'every Sunday', 'after every giggle'], 0,
+    hDetail, 'She swims through the ring every morning.');
+  rd(2, p23, 'What does swimming through the ring make Bubbles do?',
+    ['giggle', 'yawn', 'hide', 'blow pink rings'], 0,
+    hDetail, 'Swimming through it makes her giggle.');
+
+  const p24 = 'Frost the polar bear rolled three big snowballs. He stacked them up to build a snow friend. He gave it a pinecone for a nose.';
+  rd(2, p24, 'What did Frost use for the nose?',
+    ['a pinecone', 'a carrot', 'a button', 'a little snowball'], 0,
+    hDetail, 'He gave it a pinecone for a nose.');
+  rd(2, p24, 'How many snowballs did Frost roll?',
+    ['three snowballs', 'seven snowballs', 'five snowballs', 'nine snowballs'], 0,
+    hDetail, 'Frost rolled three big snowballs.');
+
+  const p25 = 'Charlie climbed the ladder to the high bar. She swung back and forth five times. Then she let go and landed on the squishy mat.';
+  rd(2, p25, 'How many times did Charlie swing?',
+    ['five times', 'four times', 'nine times', 'two times'], 0,
+    hDetail, 'She swung back and forth five times.');
+  rd(2, p25, 'Where did Charlie land?',
+    ['on the squishy mat', 'on the high ladder', 'on the grass', 'in the sandbox'], 0,
+    hDetail, 'She landed on the squishy mat.');
+
+  // ---- Tier 3 (continued): 4-5 sentences, sequence / main idea ----
+  const p26 = "Charlie wanted to surprise Nova the unicorn. First she picked berries by the palace gate. Next she baked them into a little pie. Last she set the pie outside Nova's door and hid behind a bush. Nova sniffed the air and smiled.";
+  rd(3, p26, 'What did Charlie do first?',
+    ['picked berries', 'baked a pie', 'hid behind a bush', 'knocked on the door'], 0,
+    hOrder, 'First she picked berries by the gate.');
+  rd(3, p26, 'What is this story mostly about?',
+    ['a surprise for Nova', 'how to bake berry pies', 'a bush by the palace gate', 'why unicorns sniff the air'], 0,
+    hMain, 'The story is about a surprise for Nova.');
+
+  const p27 = 'Pearl the octopus cleaned her cave for a party. She swept the sand with two arms. She hung shiny shells with two more arms. With her last four arms, she waved all her friends inside.';
+  rd(3, p27, 'What did Pearl do right after sweeping?',
+    ['hung up shells', 'waved friends inside', 'took a little nap', 'left the cave'], 0,
+    hOrder, 'After sweeping, she hung shiny shells.');
+  rd(3, p27, 'What is this story mostly about?',
+    ['Pearl getting ready for a party', 'how octopuses grow their eight arms', 'a sandy beach near a cave', 'shells that wash up on sand'], 0,
+    hMain, 'It is about Pearl getting ready for a party.');
+
+  const p28 = 'The Pattern Palace put on a light show. First the windows glowed teal. Next the towers turned violet. Then every wall sparkled gold. Charlie clapped until her hands felt warm.';
+  rd(3, p28, 'What glowed first at the palace?',
+    ['the windows', 'the towers', 'the walls', 'the gold doors'], 0,
+    hOrder, 'First the windows glowed teal.');
+  rd(3, p28, 'What did Charlie do at the end?',
+    ['clapped her hands', 'glowed bright teal', 'turned violet', 'sparkled like gold'], 0,
+    hOrder, 'Charlie clapped until her hands felt warm.');
+
+  const p29 = 'Willow the deer led Charlie up Story Summit. First they tiptoed past a sleeping lion. Next they crossed a creaky golden bridge. At the very top, Willow bowed, and Charlie bowed right back.';
+  rd(3, p29, 'What did they do before crossing the bridge?',
+    ['tiptoed past a lion', 'bowed at the top', 'crossed a golden gate', 'woke the sleeping lion'], 0,
+    hOrder, 'First they tiptoed past a sleeping lion.');
+  rd(3, p29, 'What is this story mostly about?',
+    ['a climb up Story Summit', 'a lion who naps all day', 'how golden bridges get creaky', 'learning to bow like a deer'], 0,
+    hMain, 'It tells about a climb up Story Summit.');
+
+  const p30 = 'Goldie the lion planted a tiny seed on the summit. She watered it every single day. Little by little, a green stem stretched up. One morning a sunflower opened, taller than Goldie herself.';
+  rd(3, p30, 'What did Goldie do every single day?',
+    ['watered the seed', 'planted new seeds', 'opened a sunflower', 'stretched on the summit'], 0,
+    hOrder, 'She watered the seed every single day.');
+  rd(3, p30, 'What happened last in the story?',
+    ['the sunflower opened', 'Goldie planted a seed', 'the stem stretched up', 'rain watered the seed'], 0,
+    hOrder, 'One morning the sunflower finally opened.');
+
+  // ---- Tier 4 (continued): inference ----
+  const p31 = 'Charlie bounced on her toes while she waited for her turn. She grinned at everyone in line. When her name was called, she cheered and ran to the bars.';
+  rd(4, p31, 'How did Charlie feel while she waited?',
+    ['excited', 'sleepy', 'worried', 'grumpy'], 0,
+    hFeel, 'Bouncing, grinning, and cheering show she felt excited.');
+  rd(4, p31, 'How do you know she was excited?',
+    ['she grinned and cheered', 'she walked away very slowly', 'she yawned in line', 'she hid from everyone'], 0,
+    hClue, 'Her grin and cheer show excitement.');
+
+  const p32 = 'Frost the polar bear looked at the last berry in the bowl. His tummy rumbled loudly. But he slid the bowl over to Echo and said, "You first."';
+  rd(4, p32, 'How do you know Frost was hungry?',
+    ['his tummy rumbled', 'he slid the bowl away', 'he said you first', 'it was the last berry'], 0,
+    hClue, 'A rumbling tummy shows Frost felt hungry.');
+  rd(4, p32, 'Why did Frost give Echo the berry?',
+    ['he was being kind', 'his tummy was full', 'he did not like berries', 'Echo grabbed the bowl'], 0,
+    hClue, 'Frost shared the last berry to be kind.');
+
+  const p33 = 'Nova the unicorn searched the whole palace for her ribbon. She looked under rugs and behind every door. When Opal flew in wearing the ribbon as a bow, Nova laughed and laughed.';
+  rd(4, p33, 'How did Nova feel at the end?',
+    ['happy', 'angry', 'sleepy', 'scared'], 0,
+    hFeel, 'Her laugh shows Nova felt happy.');
+  rd(4, p33, 'Which clue shows Nova searched all over?',
+    ['she looked under rugs', 'she laughed at the end', 'Opal wore a pretty bow', 'the palace has shiny doors'], 0,
+    hClue, 'Looking under rugs shows she searched everywhere.');
+
+  const p34 = 'Coral the turtle packed her pail, a snack, and her floaty hat. She checked the tide chart twice. Then she stood by the door, tapping her flippers and watching the clock.';
+  rd(4, p34, 'How was Coral feeling?',
+    ['ready to go', 'too sleepy to move', 'scared of the sea', 'angry at her hat'], 0,
+    hFeel, 'Packing and watching the clock show she felt ready.');
+  rd(4, p34, 'Where was Coral about to go?',
+    ['to the sea', 'to bed', 'to the snowy hills', 'to the palace'], 0,
+    hClue, 'A tide chart and floaty hat mean a sea trip.');
+
+  const p35 = "Skye the eagle flew through the storm to deliver Charlie's letter. The wind pushed her sideways and rain stung her wings. She gripped the letter tight and kept flying until the summit appeared.";
+  rd(4, p35, 'What does this story show about Skye?',
+    ['she keeps going', 'she naps in storms', 'she lost the letter', 'she flew back home'], 0,
+    hClue, 'Skye kept flying through the whole storm.');
+  rd(4, p35, 'Which clue shows the storm was strong?',
+    ['rain stung her wings', 'she carried a letter', 'the summit appeared', 'Skye is an eagle'], 0,
+    hClue, 'Stinging rain shows the storm was strong.');
+
+  // ---- Tier 5 (continued): vocabulary in context, twist endings ----
+  const p36 = 'Charlie tiptoed into the glittering cavern, where the walls were covered in drowsy fireflies. She moved silently, careful not to wake them. Then she sneezed, and a thousand tiny lights rose up like a sky full of stars.';
+  rd(5, p36, "What does 'drowsy' mean in this story?",
+    ['sleepy', 'sparkly', 'tiny', 'loud'], 0,
+    hVocab, 'Drowsy means sleepy — Charlie tried not to wake them.');
+  rd(5, p36, 'What happened after Charlie sneezed?',
+    ['the lights rose up', 'the cavern went dark', 'the walls tumbled down', 'the fireflies hid in cracks'], 0,
+    hTwist, 'Her sneeze made a thousand lights rise up.');
+
+  const p37 = 'Pebble the penguin zoomed downhill in the great sledding race. Halfway down he stopped to help a little hare whose sled had tipped over, and they crossed the finish line last, together. But the crowd cheered loudest of all, and the judges gave them the golden trophy — a shiny cup — for teamwork.';
+  rd(5, p37, "What is a 'trophy' in this story?",
+    ['a shiny cup', 'a golden sled', 'a snowy hill', 'a loud cheer'], 0,
+    hVocab, 'A trophy is a shiny cup for winners.');
+  rd(5, p37, 'Why did they win the golden trophy?',
+    ['for their teamwork', 'for finishing first', 'for the speediest sled', 'for the loudest cheer'], 0,
+    hTwist, 'The judges gave it to them for teamwork.');
+
+  const p38 = 'Sage the owl found an ancient map — so old that its edges crumbled like dry leaves. It showed treasure buried under the tallest tree on the summit. Sage dug and dug, but instead of gold he found a tin of seeds. By summer, the whole summit bloomed with flowers.';
+  rd(5, p38, "What does 'ancient' mean in this story?",
+    ['very old', 'very heavy', 'very muddy', 'brand new'], 0,
+    hVocab, 'Ancient means very old — its edges even crumbled.');
+  rd(5, p38, 'What did Sage really find in the ground?',
+    ['a tin of seeds', 'a chest of gold', 'a map of trees', 'a pile of leaves'], 0,
+    hTwist, 'Instead of gold, Sage found a tin of seeds.');
+
+  const p39 = 'Charlie balanced on the highest beam in the castle, feeling triumphant — like a champion who had just won. When she raised her arms to finish, the beam wiggled and stood up. It was Prism the dragon, who had been napping there all along.';
+  rd(5, p39, "What does 'triumphant' mean?",
+    ['like a winner', 'like a napper', 'very dizzy', 'a little shy'], 0,
+    hVocab, 'Triumphant means feeling like a winning champion.');
+  rd(5, p39, 'What was the beam all along?',
+    ['a dragon', 'a crystal log', 'a castle wall', 'a wooden bench'], 0,
+    hTwist, 'The beam was Prism the dragon, napping.');
+
+  const p40 = 'Hazel the hedgehog planned a feast — a great big meal — for all her friends in Word Woods. She set out acorn muffins, berry jam, and honey tea. When she rang the dinner bell, nobody came. Then she looked up: her friends were hanging balloons in the tree above, planning a surprise party for HER.';
+  rd(5, p40, "What is a 'feast'?",
+    ['a great big meal', 'a kind of dinner bell', 'a berry basket', 'a woodland game'], 0,
+    hVocab, 'A feast is a great big meal for friends.');
+  rd(5, p40, 'Why did nobody come to the feast?',
+    ['they were planning a party', 'they did not hear the bell', 'they got lost in the woods', 'they ate at home'], 0,
+    hTwist, 'Her friends were planning a surprise party.');
+
+  return bank;
+})();
+
+// === src/content/content.js ===
+// src/content/content.js — aggregator implementing the Content API.
+
+const Content = (() => {
+  const banks = {
+    words: WordsBank,
+    rhyme: RhymesBank,
+    patterns: PatternsBank,
+    reading: ReadingBank,
+  };
+  const cloneItem = (it) => {
+    const copy = { ...it };
+    if (Array.isArray(it.choices)) copy.choices = it.choices.slice();
+    if (Array.isArray(it.answerIndices)) copy.answerIndices = it.answerIndices.slice();
+    return copy;
+  };
+  const bank = (domain, tier) => {
+    const b = banks[domain];
+    if (!b) return [];
+    const t = Math.max(1, Math.min(5, Math.round(tier)));
+    return (b[t] || []).map(cloneItem);
+  };
+  const generate = (domain, tier, rng) => {
+    if (domain === 'math') return MathGen.generate(tier, rng);
+    const items = bank(domain, tier);
+    if (!items.length) return null;
+    return items[Math.min(items.length - 1, Math.floor(rng() * items.length))];
+  };
+  const counts = () => {
+    const total = (b) => Object.keys(b).reduce((n, t) => n + b[t].length, 0);
+    const passages = new Set();
+    Object.keys(ReadingBank).forEach((t) => {
+      ReadingBank[t].forEach((it) => passages.add(it.passage));
+    });
+    return {
+      words: total(WordsBank),
+      rhyme: total(RhymesBank),
+      patterns: total(PatternsBank),
+      reading: passages.size,
+      math: 'generative',
+    };
+  };
+  return { bank, generate, counts };
+})();
+
+// === src/engine/adaptive.js ===
+const Adaptive = (() => {
+  // Ability deltas per resolution outcome (contract: first/hinted/miss/repaired).
+  // first-try step retuned from the brief's +0.34 after simulation (R5):
+  // with 4-choice items, above-skill success can't drop below the ~25%
+  // guessing floor, so descent is rate-capped and a +0.34 climb forces a
+  // majority of serves above true skill (rolling first-try ~50%, vs the
+  // mission's 70-80%). +0.12 puts equilibrium at ~73-76%. See DECISIONS.md.
+  const DELTA = { first: 0.12, hinted: 0.10, miss: -0.5, repaired: 0.10 };
+
+  function clamp(x) {
+    const n = Number(x);
+    if (!Number.isFinite(n)) return 1;
+    return Math.min(5, Math.max(1, n));
+  }
+
+  function tierFor(ability) {
+    return Math.min(5, Math.max(1, Math.round(clamp(ability))));
+  }
+
+  function update(ability, outcome) {
+    const d = Object.prototype.hasOwnProperty.call(DELTA, outcome) ? DELTA[outcome] : 0;
+    return clamp(clamp(ability) + d);
+  }
+
+  return {
+    START: { words: 2.5, reading: 2.5, rhyme: 2.0, math: 1.5, patterns: 1.5 },
+    DELTA,
+    clamp,
+    tierFor,
+    update,
+  };
+})();
+
+// === src/engine/missqueue.js ===
+const MissQueue = (() => {
+  // Random re-insert offset: 3, 4, or 5 positions later.
+  function offset(rng) {
+    return 3 + Math.floor(rng() * 3);
+  }
+
+  // create() returns a session-scoped tracker: each item id may be requeued
+  // at most once per session, and an already-requeued copy never requeues.
+  function create() {
+    const used = new Set();
+    return {
+      hasRequeued(id) {
+        return used.has(id);
+      },
+      // Splices a { ...item, requeued: true } copy into `queue` 3-5 positions
+      // after `pos` (clamped to the end of the queue). Returns true if inserted.
+      tryRequeue(queue, pos, item, rng) {
+        if (!item || item.requeued || used.has(item.id)) return false;
+        used.add(item.id);
+        const at = Math.min(pos + offset(rng), queue.length);
+        queue.splice(at, 0, Object.assign({}, item, { requeued: true }));
+        return true;
+      },
+    };
+  }
+
+  return { create, offset };
+})();
+
+// === src/engine/stars.js ===
+const Stars = (() => {
+  // Pure star computation over first-try accuracy: >=0.85 -> 3, >=0.60 -> 2, else 1.
+  function compute(firstTryCorrect, totalItems) {
+    const total = Number(totalItems) || 0;
+    const ratio = total > 0 ? Number(firstTryCorrect) / total : 0;
+    if (ratio >= 0.85) return 3;
+    if (ratio >= 0.6) return 2;
+    return 1;
+  }
+
+  return { compute };
+})();
+
+// === src/engine/persist.js ===
+const Persist = (() => {
+  const KEY = 'cck-save';
+  const DOMAIN_KEYS = ['words', 'reading', 'rhyme', 'math', 'patterns'];
+
+  function memoryStorage() {
+    const mem = new Map();
+    return {
+      getItem(k) { return mem.has(k) ? mem.get(k) : null; },
+      setItem(k, v) { mem.set(k, String(v)); },
+      removeItem(k) { mem.delete(k); },
+    };
+  }
+
+  // Returns true only when the candidate storage can roundtrip a value.
+  function probe(storage) {
+    try {
+      const k = KEY + ':probe';
+      storage.setItem(k, '1');
+      const ok = storage.getItem(k) === '1';
+      if (typeof storage.removeItem === 'function') storage.removeItem(k);
+      return ok;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Validates the versioned v:1 schema. Anything off -> invalid (caller resets).
+  function valid(data) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+    if (data.v !== 1) return false;
+    if (!data.abilities || typeof data.abilities !== 'object') return false;
+    for (let i = 0; i < DOMAIN_KEYS.length; i++) {
+      const a = data.abilities[DOMAIN_KEYS[i]];
+      if (typeof a !== 'number' || !Number.isFinite(a)) return false;
+    }
+    if (!data.lands || typeof data.lands !== 'object' || Array.isArray(data.lands)) return false;
+    if (!Array.isArray(data.companions)) return false;
+    if (!data.settings || typeof data.settings !== 'object') return false;
+    return true;
+  }
+
+  // createStore(storageLike?) -> { load() -> state|null, save(state), available }
+  // Defaults to globalThis.localStorage; any failure -> in-memory fallback.
+  // load() returns null for corrupt JSON / unknown version / missing keys. Never throws.
+  function createStore(storageLike) {
+    let candidate = storageLike;
+    if (candidate === undefined) {
+      try { candidate = globalThis.localStorage; } catch (e) { candidate = undefined; }
+    }
+    let backing;
+    let available = false;
+    if (candidate && probe(candidate)) {
+      backing = candidate;
+      available = true;
+    } else {
+      backing = memoryStorage();
+      available = false;
+    }
+    return {
+      available,
+      load() {
+        try {
+          const raw = backing.getItem(KEY);
+          if (raw === null || raw === undefined) return null;
+          const data = JSON.parse(raw);
+          return valid(data) ? data : null;
+        } catch (e) {
+          return null;
+        }
+      },
+      save(state) {
+        try {
+          const s = state || {};
+          backing.setItem(KEY, JSON.stringify({
+            v: 1,
+            abilities: s.abilities,
+            lands: s.lands,
+            companions: s.companions,
+            settings: s.settings,
+          }));
+          return true;
+        } catch (e) {
+          return false;
+        }
+      },
+    };
+  }
+
+  return { KEY, createStore };
+})();
+
+// === src/engine/session.js ===
+
+const Session = (() => {
+  const CHALLENGE_COUNT = 8;
+  const ALL_DOMAINS = ['words', 'rhyme', 'math', 'patterns', 'reading'];
+  const LAND_DOMAIN = {
+    woods: 'words', reef: 'rhyme', mountains: 'math', palace: 'patterns', summit: 'reading',
+  };
+
+  function shuffled(list, rng) {
+    const a = list.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rng() * (i + 1));
+      const t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // Shuffle tiles, guaranteed !== word order with identical letters.
+  // 2-letter words: reverse. All-identical letters: order cannot differ; return as-is.
+  function shuffleTiles(word, rng) {
+    const letters = String(word).split('');
+    if (letters.length < 2) return letters;
+    if (letters.length === 2) return [letters[1], letters[0]];
+    let distinct = false;
+    for (let i = 1; i < letters.length; i++) if (letters[i] !== letters[0]) { distinct = true; break; }
+    if (!distinct) return letters.slice();
+    let tiles = shuffled(letters, rng);
+    let guard = 0;
+    while (tiles.join('') === word && guard++ < 50) tiles = shuffled(letters, rng);
+    if (tiles.join('') === word) tiles = letters.slice(1).concat(letters[0]);
+    return tiles;
+  }
+
+  // Serve-time copy: tiles shuffled; choices shuffled with answerIndex/answerIndices
+  // remapped into served coordinates.
+  function serve(base, rng) {
+    const item = Object.assign({}, base);
+    if (item.type === 'tiles') {
+      item.tiles = shuffleTiles(item.word, rng);
+    } else if (Array.isArray(base.choices)) {
+      const order = shuffled(base.choices.map((_, i) => i), rng);
+      item.choices = order.map((i) => base.choices[i]);
+      if (Array.isArray(base.answerIndices)) {
+        item.answerIndices = base.answerIndices
+          .map((a) => order.indexOf(a))
+          .sort((x, y) => x - y);
+        delete item.answerIndex;
+      } else {
+        item.answerIndex = order.indexOf(base.answerIndex);
+      }
+    }
+    return item;
+  }
+
+  // ctx: { content, copy, companions, rng, state, missq, seen, streak, save }
+  function createRun(ctx, landId) {
+    const isCastle = landId === 'castle';
+    if (!isCastle && !LAND_DOMAIN[landId]) throw new TypeError('Unknown land: ' + landId);
+    const bossTotal = isCastle ? 10 : 5;
+    let challengeDomains;
+    if (isCastle) {
+      const mix = shuffled(ALL_DOMAINS, ctx.rng);
+      challengeDomains = [];
+      for (let i = 0; i < CHALLENGE_COUNT; i++) challengeDomains.push(mix[i % mix.length]);
+    } else {
+      challengeDomains = new Array(CHALLENGE_COUNT).fill(LAND_DOMAIN[landId]);
+    }
+    const bossDomains = isCastle
+      ? shuffled(ALL_DOMAINS, ctx.rng).concat(shuffled(ALL_DOMAINS, ctx.rng))
+      : new Array(bossTotal).fill(LAND_DOMAIN[landId]);
+
+    // plan holds original challenge slots; missqueue splices requeued items in.
+    const plan = challengeDomains.map((d) => ({ original: true, domain: d }));
+    const runIds = new Set();
+    const totalOriginal = CHALLENGE_COUNT + bossTotal; // 13 (castle 18) star denominator
+
+    let phase = 'challenge';
+    let pos = 0;
+    let bossIdx = 0;
+    let curBase = null;
+    let curServed = null;
+    let attempts = 0;
+    let resolvedFlag = false;
+    let lastOutcome = null;
+    let firstTryCount = 0;
+    let originalsResolved = 0;
+    let summary = null;
+
+    function trioFor() {
+      try {
+        return (ctx.companions && ctx.companions.forLand(landId)) || [];
+      } catch (e) {
+        return [];
+      }
+    }
+
+    // Draw bounded candidates at one tier: { fresh: session-unseen, reusable:
+    // run-unseen (seen in an earlier run), any: last resort }.
+    function drawAtTier(domain, tier) {
+      let fresh = null;
+      let reusable = null;
+      let any = null;
+      for (let i = 0; i < 40; i++) {
+        const cand = ctx.content.generate(domain, tier, ctx.rng);
+        if (!cand) continue;
+        any = cand;
+        if (runIds.has(cand.id)) continue;
+        if (!reusable) reusable = cand;
+        if (!ctx.seen.has(cand.id)) { fresh = cand; break; }
+      }
+      return { fresh, reusable, any };
+    }
+
+    // Never repeat an id within a run (a repeat turns the challenge into
+    // recall): prefer the target tier, then session-reuse at target tier,
+    // then nearest neighbor tiers, before ever repeating an id.
+    function pickItem(domain) {
+      const tier = Adaptive.tierFor(ctx.state.abilities[domain]);
+      const neighborTiers = [tier - 1, tier + 1, tier - 2, tier + 2, tier - 3, tier + 3, tier - 4, tier + 4]
+        .filter((t) => t >= 1 && t <= 5);
+      const target = drawAtTier(domain, tier);
+      let item = target.fresh || target.reusable;
+      if (!item) {
+        for (const t of neighborTiers) {
+          const d = drawAtTier(domain, t);
+          if (d.fresh || d.reusable) { item = d.fresh || d.reusable; break; }
+        }
+      }
+      item = item || target.any;
+      runIds.add(item.id);
+      ctx.seen.add(item.id);
+      return item;
+    }
+
+    // A requeue serves a same-tier sibling when one is available (independent
+    // evidence of repair beats re-showing the just-revealed item); falls back
+    // to the original item itself.
+    function pickSibling(entry) {
+      for (let i = 0; i < 40; i++) {
+        const cand = ctx.content.generate(entry.domain, entry.tier, ctx.rng);
+        if (!cand) break;
+        if (cand.id === entry.id || runIds.has(cand.id) || ctx.seen.has(cand.id)) continue;
+        runIds.add(cand.id);
+        ctx.seen.add(cand.id);
+        return { ...cand, requeued: true };
+      }
+      return entry;
+    }
+
+    function ensureCurrent() {
+      if (curServed || summary) return;
+      if (phase === 'challenge') {
+        const entry = plan[pos];
+        curBase = entry.requeued ? pickSibling(entry) : pickItem(entry.domain);
+        curServed = serve(curBase, ctx.rng);
+      } else {
+        curBase = pickItem(bossDomains[bossIdx]);
+        curServed = serve(curBase, ctx.rng);
+      }
+      attempts = 0;
+      resolvedFlag = false;
+      lastOutcome = null;
+    }
+
+    function current() {
+      if (summary) return null;
+      ensureCurrent();
+      if (phase === 'challenge') {
+        return {
+          phase: 'challenge', index: pos + 1, total: plan.length, bossTotal, item: curServed, landId,
+          // stable progress for the UI dot row: requeued items never grow it
+          originalsTotal: CHALLENGE_COUNT, originalsDone: originalsResolved,
+        };
+      }
+      return {
+        phase: 'boss', index: bossIdx + 1, total: bossTotal, bossTotal, item: curServed, landId,
+        originalsTotal: bossTotal, originalsDone: bossIdx,
+      };
+    }
+
+    function isCorrect(answer) {
+      const it = curServed;
+      if (it.type === 'tiles') {
+        return typeof answer === 'string'
+          && answer.trim().toUpperCase() === String(it.word).toUpperCase();
+      }
+      if (Array.isArray(it.answerIndices)) {
+        if (!Array.isArray(answer) || answer.length !== it.answerIndices.length) return false;
+        const want = it.answerIndices.slice().sort((a, b) => a - b);
+        const got = answer.map(Number).sort((a, b) => a - b);
+        for (let i = 0; i < want.length; i++) if (want[i] !== got[i]) return false;
+        return true;
+      }
+      return Number(answer) === it.answerIndex;
+    }
+
+    function revealAnswer() {
+      const it = curServed;
+      if (it.type === 'tiles') return it.word;
+      if (Array.isArray(it.answerIndices)) return it.answerIndices.slice();
+      return it.answerIndex;
+    }
+
+    function submit(answer) {
+      if (summary) return null;
+      ensureCurrent();
+      if (resolvedFlag) return lastOutcome;
+      attempts += 1;
+      const correct = isCorrect(answer);
+      const isBoss = phase === 'boss';
+      const entry = isBoss ? null : plan[pos];
+      const isRequeued = !!(entry && entry.requeued);
+      const domain = curServed.domain;
+      const events = [];
+      let outcome;
+
+      if (correct) {
+        const firstTry = attempts === 1;
+        resolvedFlag = true;
+        if (isRequeued) {
+          // Repaired: small credit on any-try correct; never counts toward stars.
+          ctx.state.abilities[domain] = Adaptive.update(ctx.state.abilities[domain], 'repaired');
+        } else {
+          ctx.state.abilities[domain] = Adaptive.update(ctx.state.abilities[domain], firstTry ? 'first' : 'hinted');
+          if (firstTry) firstTryCount += 1;
+        }
+        if (firstTry) {
+          ctx.streak.n += 1;
+          events.push({ type: 'streak', n: ctx.streak.n });
+          if (ctx.streak.n % 3 === 0) events.push({ type: 'levelup' });
+        } else {
+          ctx.streak.n = 0;
+        }
+        if (isBoss) events.push({ type: 'bossHit' });
+        outcome = {
+          status: 'correct', firstTry, feedback: ctx.copy.correct(ctx.rng),
+          hint: '', explain: '', resolved: true, events,
+        };
+      } else if (attempts === 1) {
+        if (isBoss) events.push({ type: 'bossBlock' });
+        outcome = {
+          status: 'retry', firstTry: false, feedback: ctx.copy.miss(ctx.rng),
+          hint: curServed.hint || '', explain: '', resolved: false, events,
+        };
+      } else {
+        resolvedFlag = true;
+        ctx.streak.n = 0;
+        // A full miss is a full miss, requeued or not (-0.5): the second drop on
+        // persistently-missed material is what holds rolling first-try success in
+        // the 70-80% productive-struggle band (verified by test/simulate.js).
+        // Requeued items still never affect stars and never requeue twice.
+        ctx.state.abilities[domain] = Adaptive.update(ctx.state.abilities[domain], 'miss');
+        if (!isRequeued && !isBoss) ctx.missq.tryRequeue(plan, pos, curBase, ctx.rng);
+        if (isBoss) events.push({ type: 'bossBlock' });
+        outcome = {
+          status: 'reveal', firstTry: false,
+          feedback: ctx.copy.miss(ctx.rng), revealLine: ctx.copy.reveal(ctx.rng),
+          hint: curServed.hint || '', explain: curServed.explain || '',
+          correctAnswer: revealAnswer(), resolved: true, events,
+        };
+      }
+
+      if (outcome.resolved) {
+        if (!isBoss && !isRequeued) {
+          originalsResolved += 1;
+          if (originalsResolved === 3 || originalsResolved === 6) {
+            const trio = trioFor();
+            const comp = trio[originalsResolved === 3 ? 0 : 1];
+            if (comp && ctx.state.companions.indexOf(comp.id) === -1) {
+              ctx.state.companions.push(comp.id);
+              events.push({
+                type: 'egg',
+                companion: { id: comp.id, name: comp.name, emoji: comp.emoji, line: comp.line },
+              });
+            }
+          }
+        }
+        ctx.save();
+      }
+      lastOutcome = outcome;
+      return outcome;
+    }
+
+    function finish() {
+      const earned = Stars.compute(firstTryCount, totalOriginal);
+      const prev = (ctx.state.lands[landId] && ctx.state.lands[landId].stars) || 0;
+      const stars = Math.max(prev, earned); // stars only ever improve
+      ctx.state.lands[landId] = { stars };
+      let bossCompanion = null;
+      const comp = trioFor()[2];
+      if (comp && ctx.state.companions.indexOf(comp.id) === -1) {
+        ctx.state.companions.push(comp.id);
+        bossCompanion = { id: comp.id, name: comp.name, emoji: comp.emoji, line: comp.line };
+      }
+      summary = { finished: true, stars, starsBefore: prev, bossCompanion, landId };
+      ctx.save();
+      return summary;
+    }
+
+    function advance() {
+      if (summary) return summary;
+      if (curServed && !resolvedFlag) return current(); // defensive: not resolved yet
+      curServed = null;
+      curBase = null;
+      lastOutcome = null;
+      if (phase === 'challenge') {
+        pos += 1;
+        if (pos >= plan.length) { phase = 'boss'; bossIdx = 0; }
+        return current();
+      }
+      bossIdx += 1;
+      if (bossIdx >= bossTotal) return finish();
+      return current();
+    }
+
+    function hint() {
+      if (summary) return '';
+      ensureCurrent();
+      return (curServed && curServed.hint) || '';
+    }
+
+    return { landId, current, submit, advance, hint };
+  }
+
+  return { CHALLENGE_COUNT, ALL_DOMAINS, LAND_DOMAIN, serve, shuffleTiles, shuffled, createRun };
+})();
+
+// === src/engine/engine.js ===
+
+const Engine = (() => {
+  const LAND_ORDER = ['woods', 'reef', 'mountains', 'palace', 'summit'];
+  const ALL_LANDS = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+
+  function freshState() {
+    const lands = {};
+    for (let i = 0; i < ALL_LANDS.length; i++) lands[ALL_LANDS[i]] = { stars: 0 };
+    return {
+      abilities: Object.assign({}, Adaptive.START),
+      lands,
+      companions: [],
+      settings: { muted: false },
+    };
+  }
+
+  // Merge a loaded save into a fresh state, defensively (loaded already passed
+  // Persist validation, but clamp/shape everything anyway).
+  function hydrate(loaded) {
+    const s = freshState();
+    if (!loaded) return s;
+    const domains = Object.keys(s.abilities);
+    for (let i = 0; i < domains.length; i++) {
+      const d = domains[i];
+      const a = loaded.abilities && loaded.abilities[d];
+      if (typeof a === 'number' && Number.isFinite(a)) s.abilities[d] = Adaptive.clamp(a);
+    }
+    for (let i = 0; i < ALL_LANDS.length; i++) {
+      const l = ALL_LANDS[i];
+      const st = loaded.lands && loaded.lands[l] && loaded.lands[l].stars;
+      if (st === 0 || st === 1 || st === 2 || st === 3) s.lands[l] = { stars: st };
+    }
+    if (Array.isArray(loaded.companions)) {
+      s.companions = loaded.companions.filter((c) => typeof c === 'string');
+    }
+    if (loaded.settings && typeof loaded.settings.muted === 'boolean') {
+      s.settings.muted = loaded.settings.muted;
+    }
+    return s;
+  }
+
+  // Engine.create({ content, copy, companions, store, rng }) -> game facade.
+  function create(opts) {
+    const options = opts || {};
+    const content = options.content;
+    const copy = options.copy;
+    const companions = options.companions;
+    const store = options.store;
+    const rng = options.rng || Math.random;
+
+    let loaded = null;
+    try {
+      loaded = store && typeof store.load === 'function' ? store.load() : null;
+    } catch (e) {
+      loaded = null; // a hostile store must never block boot
+    }
+    const state = hydrate(loaded);
+
+    const game = {
+      state,
+      landStatus(landId) {
+        const stars = (state.lands[landId] && state.lands[landId].stars) || 0;
+        if (landId === 'woods') return { unlocked: true, stars };
+        if (landId === 'castle') {
+          let all = true;
+          for (let i = 0; i < LAND_ORDER.length; i++) {
+            if (((state.lands[LAND_ORDER[i]] && state.lands[LAND_ORDER[i]].stars) || 0) < 1) { all = false; break; }
+          }
+          return { unlocked: all, stars };
+        }
+        const i = LAND_ORDER.indexOf(landId);
+        if (i < 0) return { unlocked: false, stars };
+        const prev = LAND_ORDER[i - 1];
+        return { unlocked: ((state.lands[prev] && state.lands[prev].stars) || 0) >= 1, stars };
+      },
+      setMuted(muted) {
+        state.settings.muted = !!muted;
+        game.save();
+      },
+      save() {
+        try {
+          if (store && typeof store.save === 'function') {
+            store.save({
+              v: 1,
+              abilities: state.abilities,
+              lands: state.lands,
+              companions: state.companions,
+              settings: state.settings,
+            });
+          }
+        } catch (e) {
+          // a hostile store must never break gameplay (mirror of the load guard)
+        }
+      },
+      startLand(landId) {
+        return Session.createRun(ctx, landId);
+      },
+    };
+
+    // Session-scoped context shared by every run this engine instance creates:
+    // one miss-queue (once per item id per session), one seen-id set, one streak.
+    const ctx = {
+      content,
+      copy,
+      companions,
+      rng,
+      state,
+      missq: MissQueue.create(),
+      seen: new Set(),
+      streak: { n: 0 },
+      save() { game.save(); },
+    };
+
+    return game;
+  }
+
+  return { LAND_ORDER, ALL_LANDS, create };
+})();
+
+// === src/audio/audiokit.js ===
+// AudioKit — synthesized Web Audio sound kit for Charlie's Crystal Kingdom.
+// All sounds are generated with oscillators, gain envelopes, and a touch of
+// filtered noise. No assets, no network. Every public function is wrapped so
+// it can never throw — before init, when muted, or when Web Audio is missing
+// (e.g. importing this file in Node), every call is a silent no-op.
+
+const AudioKit = (() => {
+  // ---- private state (closure-scoped; nothing leaks to top level) ----------
+  let akCtx = null;        // AudioContext, created lazily on first init() gesture
+  let akMaster = null;     // master GainNode — mute gates this to hard zero
+  let akMuted = false;
+  let akNoiseBuf = null;   // cached white-noise buffer for the crystal crack
+
+  const AK_MASTER_LEVEL = 0.85;
+
+  // ---- core plumbing -------------------------------------------------------
+
+  function akEnsureContext() {
+    // Call-time feature detection only — never at module top level.
+    if (typeof window === 'undefined') return null;
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    if (!akCtx) {
+      akCtx = new AC();
+      akMaster = akCtx.createGain();
+      akMaster.gain.value = akMuted ? 0 : AK_MASTER_LEVEL;
+      akMaster.connect(akCtx.destination);
+    }
+    // Safari resumes only inside a user gesture; init() is called on gestures,
+    // so resuming here is safe and idempotent. WebKit can also park a context
+    // in a non-standard 'interrupted' state after an app switch, screen lock,
+    // or Siri — so resume on ANY non-running state, not just 'suspended'.
+    if (akCtx.state !== 'running' && akCtx.resume) {
+      const p = akCtx.resume();
+      if (p && p.catch) p.catch(() => {});
+    }
+    return akCtx;
+  }
+
+  function akNow() {
+    return akCtx ? akCtx.currentTime : 0;
+  }
+
+  // One short-lived oscillator voice. Created per sound, auto-disconnected on
+  // end so nothing accumulates across a long session.
+  function akTone(opts) {
+    if (!akCtx || !akMaster) return;
+    const t0 = opts.at;
+    const dur = opts.dur;
+    const peak = opts.peak !== undefined ? opts.peak : 0.2;
+    const attack = opts.attack !== undefined ? opts.attack : 0.012;
+
+    const osc = akCtx.createOscillator();
+    const gain = akCtx.createGain();
+    osc.type = opts.type || 'sine';
+    osc.frequency.setValueAtTime(opts.freq, t0);
+    if (opts.glideTo) {
+      osc.frequency.exponentialRampToValueAtTime(opts.glideTo, t0 + dur);
+    }
+
+    // Click-free envelope: linear attack up, exponential release down.
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(peak, t0 + attack);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+
+    osc.connect(gain);
+    gain.connect(akMaster);
+    osc.onended = () => {
+      try {
+        osc.disconnect();
+        gain.disconnect();
+      } catch (e) { /* already gone */ }
+    };
+    osc.start(t0);
+    osc.stop(t0 + dur + 0.05);
+  }
+
+  // Short filtered-noise burst — the sparkle of a crystal crack.
+  function akNoise(opts) {
+    if (!akCtx || !akMaster) return;
+    if (!akNoiseBuf) {
+      const len = Math.floor(akCtx.sampleRate * 0.3);
+      akNoiseBuf = akCtx.createBuffer(1, len, akCtx.sampleRate);
+      const data = akNoiseBuf.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const t0 = opts.at;
+    const dur = opts.dur;
+    const src = akCtx.createBufferSource();
+    src.buffer = akNoiseBuf;
+    const filt = akCtx.createBiquadFilter();
+    filt.type = opts.filterType || 'bandpass';
+    filt.frequency.setValueAtTime(opts.freq, t0);
+    filt.Q.value = opts.q !== undefined ? opts.q : 6;
+    const gain = akCtx.createGain();
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.linearRampToValueAtTime(opts.peak !== undefined ? opts.peak : 0.25, t0 + 0.006);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(filt);
+    filt.connect(gain);
+    gain.connect(akMaster);
+    src.onended = () => {
+      try {
+        src.disconnect();
+        filt.disconnect();
+        gain.disconnect();
+      } catch (e) { /* already gone */ }
+    };
+    src.start(t0);
+    src.stop(t0 + dur + 0.05);
+  }
+
+  // ---- sound palette (C-major-ish, warm and musical) -----------------------
+  // Note frequencies used: C3 130.81, E3 164.81, C4 261.63, D4 293.66,
+  // E4 329.63, G4 392.0, C5 523.25, D5 587.33, E5 659.26, G5 783.99,
+  // A5 880.0, C6 1046.5, E6 1318.5, G6 1568.0
+
+  function akPlayTap() {
+    // Soft pop: a tiny rounded blip with a gentle downward glide.
+    const t = akNow();
+    akTone({ freq: 523.25, glideTo: 392.0, type: 'triangle', at: t, dur: 0.07, peak: 0.12, attack: 0.004 });
+  }
+
+  function akPlayPop() {
+    // Slightly fuller pop (reveal moment): soft sine drop.
+    const t = akNow();
+    akTone({ freq: 587.33, glideTo: 293.66, type: 'sine', at: t, dur: 0.13, peak: 0.16, attack: 0.005 });
+  }
+
+  function akPlayCorrect() {
+    // Ascending major arpeggio, 4 notes, ~180ms each, staggered.
+    // Base note varies subtly run-to-run so it never feels canned.
+    const bases = [261.63, 293.66, 329.63]; // C4, D4, E4
+    const base = bases[Math.floor(Math.random() * bases.length)];
+    const ratios = [1, 1.25, 1.5, 2]; // root, major third, fifth, octave
+    const t = akNow();
+    for (let i = 0; i < ratios.length; i++) {
+      akTone({
+        freq: base * ratios[i],
+        type: 'triangle',
+        at: t + i * 0.09,
+        dur: 0.18,
+        peak: 0.16 + (i === ratios.length - 1 ? 0.04 : 0),
+      });
+    }
+  }
+
+  function akPlayMiss() {
+    // Warm, kind low "hmm": E3 then C3, soft sines, never harsh.
+    const t = akNow();
+    akTone({ freq: 164.81, type: 'sine', at: t, dur: 0.26, peak: 0.14, attack: 0.03 });
+    akTone({ freq: 130.81, type: 'sine', at: t + 0.2, dur: 0.34, peak: 0.13, attack: 0.03 });
+  }
+
+  function akPlayFanfare() {
+    // Land-complete fanfare, ~1.2s: rising arpeggio into a held major chord.
+    const t = akNow();
+    const run = [261.63, 329.63, 392.0, 523.25]; // C4 E4 G4 C5
+    for (let i = 0; i < run.length; i++) {
+      akTone({ freq: run[i], type: 'triangle', at: t + i * 0.11, dur: 0.22, peak: 0.16 });
+    }
+    // Closing chord: C5 + E5 + G5, with a sine octave shimmer on top.
+    const chordAt = t + 0.48;
+    akTone({ freq: 523.25, type: 'triangle', at: chordAt, dur: 0.72, peak: 0.14, attack: 0.02 });
+    akTone({ freq: 659.26, type: 'triangle', at: chordAt, dur: 0.72, peak: 0.12, attack: 0.02 });
+    akTone({ freq: 783.99, type: 'triangle', at: chordAt, dur: 0.72, peak: 0.12, attack: 0.02 });
+    akTone({ freq: 1046.5, type: 'sine', at: chordAt + 0.05, dur: 0.65, peak: 0.07, attack: 0.04 });
+  }
+
+  function akPlayHatch() {
+    // Tiny chime: two bright high notes, quick and delicate.
+    const t = akNow();
+    akTone({ freq: 1318.5, type: 'sine', at: t, dur: 0.16, peak: 0.12, attack: 0.005 });
+    akTone({ freq: 1568.0, type: 'sine', at: t + 0.09, dur: 0.24, peak: 0.12, attack: 0.005 });
+  }
+
+  function akPlayLevelup() {
+    // Bright rising sparkle: quick pentatonic run with a shimmer on top.
+    const t = akNow();
+    const run = [523.25, 587.33, 659.26, 783.99, 880.0, 1046.5]; // C5 D5 E5 G5 A5 C6
+    for (let i = 0; i < run.length; i++) {
+      akTone({ freq: run[i], type: 'sine', at: t + i * 0.055, dur: 0.14, peak: 0.11, attack: 0.004 });
+    }
+    akTone({ freq: 2093.0, type: 'sine', at: t + 0.33, dur: 0.3, peak: 0.06, attack: 0.02 });
+  }
+
+  function akPlayBossHit() {
+    // Crystalline crack: bright filtered-noise snap plus a glassy ping,
+    // both with a very quick decay.
+    const t = akNow();
+    akNoise({ at: t, dur: 0.12, freq: 4200, q: 5, peak: 0.22 });
+    akNoise({ at: t, dur: 0.06, freq: 7800, q: 2, peak: 0.1, filterType: 'highpass' });
+    akTone({ freq: 1568.0, glideTo: 1244.5, type: 'sine', at: t + 0.005, dur: 0.14, peak: 0.13, attack: 0.003 });
+  }
+
+  const akSounds = {
+    tap: akPlayTap,
+    correct: akPlayCorrect,
+    miss: akPlayMiss,
+    fanfare: akPlayFanfare,
+    hatch: akPlayHatch,
+    levelup: akPlayLevelup,
+    pop: akPlayPop,
+    bossHit: akPlayBossHit,
+  };
+
+  // ---- public API (every function is throw-proof) --------------------------
+
+  return {
+    init() {
+      // Safe on every gesture: creates the context once, resumes if suspended,
+      // and is a silent no-op anywhere Web Audio does not exist.
+      try {
+        akEnsureContext();
+      } catch (e) { /* never throws */ }
+    },
+
+    poke() {
+      // Resume an EXISTING context only (e.g. on visibilitychange after an
+      // interruption). Never creates a context — creation stays gesture-driven.
+      try {
+        if (akCtx && akCtx.state !== 'running' && akCtx.resume) {
+          const p = akCtx.resume();
+          if (p && p.catch) p.catch(() => {});
+        }
+      } catch (e) { /* never throws */ }
+    },
+
+    play(name) {
+      try {
+        if (akMuted) return;               // muted = hard silence
+        if (!akCtx || !akMaster) return;   // not initialized yet = silent no-op
+        if (akCtx.state !== 'running') return;
+        const fn = akSounds[name];
+        if (fn) fn();
+      } catch (e) { /* never throws */ }
+    },
+
+    setMuted(muted) {
+      try {
+        akMuted = !!muted;
+        if (akMaster && akCtx) {
+          // Hard-gate the master bus so even in-flight tails go silent fast.
+          const t = akCtx.currentTime;
+          akMaster.gain.cancelScheduledValues(t);
+          akMaster.gain.setValueAtTime(akMaster.gain.value, t);
+          akMaster.gain.linearRampToValueAtTime(akMuted ? 0 : AK_MASTER_LEVEL, t + 0.02);
+        }
+      } catch (e) { /* never throws */ }
+    },
+
+    isMuted() {
+      try {
+        return akMuted;
+      } catch (e) {
+        return false;
+      }
+    },
+  };
+})();
+
+// === src/ui/juice.js ===
+// Juice — small delight helpers: toast queue, springy press states, gentle
+// shake. DOM access is feature-detected at call time so importing this file
+// in Node never crashes; in a browser everything just works.
+
+const Juice = (() => {
+  // ---- private state -------------------------------------------------------
+  let jzToastQueue = [];
+  let jzToastShowing = false;
+  let jzToastWrap = null;
+  let jzPressified = false; // guard against double-wiring the same document
+
+  const JZ_TOAST_HOLD_MS = 2300;  // how long a toast stays before dismissing
+  const JZ_TOAST_EXIT_MS = 320;   // matches the exit transition in juice.css
+  const JZ_SHAKE_MS = 460;        // matches the shake keyframes duration
+  const JZ_DIM_MS = 360;          // matches the dim keyframes duration
+
+  function jzHasDom() {
+    return typeof window !== 'undefined' && typeof document !== 'undefined';
+  }
+
+  function jzReducedMotion() {
+    try {
+      if (!jzHasDom() || typeof window.matchMedia !== 'function') return false;
+      return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // ---- toast queue ---------------------------------------------------------
+
+  function jzEnsureToastWrap() {
+    if (jzToastWrap && jzToastWrap.isConnected) return jzToastWrap;
+    jzToastWrap = document.createElement('div');
+    jzToastWrap.className = 'jz-toast-wrap';
+    jzToastWrap.setAttribute('aria-live', 'polite');
+    document.body.appendChild(jzToastWrap);
+    return jzToastWrap;
+  }
+
+  function jzShowNextToast() {
+    if (jzToastShowing) return;
+    const next = jzToastQueue.shift();
+    if (next === undefined) return;
+    jzToastShowing = true;
+
+    const wrap = jzEnsureToastWrap();
+    const el = document.createElement('div');
+    el.className = 'jz-toast';
+    el.textContent = next.text;
+    wrap.appendChild(el);
+
+    // Force a layout so the entrance animation always plays from the start.
+    void el.offsetWidth;
+    el.classList.add('jz-toast-in');
+
+    window.setTimeout(() => {
+      el.classList.remove('jz-toast-in');
+      el.classList.add('jz-toast-out');
+      window.setTimeout(() => {
+        if (el.parentNode) el.parentNode.removeChild(el);
+        jzToastShowing = false;
+        jzShowNextToast();
+      }, JZ_TOAST_EXIT_MS);
+    }, next.hold);
+  }
+
+  // ---- delegated press states ---------------------------------------------
+
+  function jzWirePress(rootEl) {
+    let pressedEl = null;
+
+    const release = () => {
+      if (pressedEl) {
+        pressedEl.classList.remove('is-pressed');
+        pressedEl = null;
+      }
+    };
+
+    rootEl.addEventListener('pointerdown', (e) => {
+      try {
+        const target = e.target && e.target.closest ? e.target.closest('[data-press]') : null;
+        release();
+        if (target) {
+          pressedEl = target;
+          target.classList.add('is-pressed');
+        }
+      } catch (err) { /* never break input handling */ }
+    }, { passive: true });
+
+    rootEl.addEventListener('pointerup', release, { passive: true });
+    rootEl.addEventListener('pointercancel', release, { passive: true });
+    rootEl.addEventListener('pointerleave', release, { passive: true });
+  }
+
+  // ---- public API ----------------------------------------------------------
+
+  return {
+    // Top toast with spring entrance; queued so messages never overlap.
+    // Optional holdMs overrides how long this toast stays on screen.
+    toast(text, holdMs) {
+      try {
+        if (!jzHasDom() || !text) return;
+        const hold = holdMs > 0 ? Number(holdMs) : JZ_TOAST_HOLD_MS;
+        jzToastQueue.push({ text: String(text), hold });
+        jzShowNextToast();
+      } catch (e) { /* never throws */ }
+    },
+
+    // Delegated springy press states for everything marked [data-press].
+    // One set of listeners on the root — no per-element wiring.
+    pressify(rootEl) {
+      try {
+        if (!jzHasDom()) return;
+        const root = rootEl || document.body;
+        if (!root || !root.addEventListener) return;
+        if (root === document.body && jzPressified) return;
+        if (root === document.body) jzPressified = true;
+        jzWirePress(root);
+      } catch (e) { /* never throws */ }
+    },
+
+    // Gentle horizontal shake for a retry moment. With reduced motion
+    // preferred, a brief dim takes its place — no movement at all.
+    shake(el) {
+      try {
+        if (!jzHasDom() || !el || !el.classList) return;
+        if (jzReducedMotion()) {
+          el.classList.remove('jz-dim');
+          void el.offsetWidth;
+          el.classList.add('jz-dim');
+          window.setTimeout(() => el.classList.remove('jz-dim'), JZ_DIM_MS);
+        } else {
+          el.classList.remove('jz-shake');
+          void el.offsetWidth;
+          el.classList.add('jz-shake');
+          window.setTimeout(() => el.classList.remove('jz-shake'), JZ_SHAKE_MS);
+        }
+      } catch (e) { /* never throws */ }
+    },
+
+    reducedMotion() {
+      return jzReducedMotion();
+    },
+  };
+})();
+
+// === src/ui/particles.js ===
+// Particles — canvas overlay particle system for Charlie's Crystal Kingdom.
+// Contract: attach(canvas), burst(kind, x, y, opts), sparkleTrail(x, y),
+// setReduced(bool), tick(dt), count(). Hard cap 300 live particles.
+// One rAF loop lives in main.js and calls Particles.tick(dt) with dt in seconds.
+
+const Particles = (() => {
+  const MAX = 300;
+  const live = [];
+  let cvs = null;
+  let ctx = null;
+  let reduced = false;
+  let cssW = 0;
+  let cssH = 0;
+
+  const COLORS = {
+    shatter: ['#7ef0e2', '#b9a7ff', '#f4f1ff', '#5eead4', '#c4b5fd'],
+    confetti: ['#ffd166', '#ff8e7a', '#2dd4bf', '#a78bfa', '#f7f5ff', '#7ef0e2', '#f0abfc'],
+    hatch: ['#ffd166', '#ffe9a8', '#f7f5ff', '#ffc94d'],
+    sparkle: ['#ffd166', '#f7f5ff', '#c4b5fd', '#7ef0e2'],
+  };
+
+  function pick(arr) {
+    return arr[(Math.random() * arr.length) | 0];
+  }
+
+  function resize() {
+    if (!cvs) return;
+    const dpr = Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 2);
+    cssW = window.innerWidth;
+    cssH = window.innerHeight;
+    cvs.width = Math.max(1, Math.round(cssW * dpr));
+    cvs.height = Math.max(1, Math.round(cssH * dpr));
+    cvs.style.width = cssW + 'px';
+    cvs.style.height = cssH + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function attach(canvas) {
+    cvs = canvas;
+    ctx = canvas.getContext('2d');
+    resize();
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+  }
+
+  // Cap enforcement: new spawns evict the oldest live particles.
+  function push(p) {
+    if (live.length >= MAX) live.splice(0, live.length - MAX + 1);
+    live.push(p);
+  }
+
+  function spawnOne(kind, x, y) {
+    const a = Math.random() * Math.PI * 2;
+    if (kind === 'shatter') {
+      const sp = 130 + Math.random() * 250;
+      push({
+        kind, x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 130,
+        g: 640,
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 12,
+        size: 4 + Math.random() * 7,
+        life: 0.7 + Math.random() * 0.5,
+        age: 0,
+        color: pick(COLORS.shatter),
+        shape: 'shard',
+      });
+    } else if (kind === 'confetti') {
+      const sp = 220 + Math.random() * 320;
+      const up = -Math.PI / 2 + (Math.random() - 0.5) * 1.3;
+      push({
+        kind, x, y,
+        vx: Math.cos(up) * sp,
+        vy: Math.sin(up) * sp,
+        g: 460,
+        rot: Math.random() * Math.PI * 2,
+        vr: (Math.random() - 0.5) * 16,
+        size: 5 + Math.random() * 6,
+        life: 1.4 + Math.random() * 1.1,
+        age: 0,
+        wob: Math.random() * Math.PI * 2,
+        color: pick(COLORS.confetti),
+        shape: 'rect',
+      });
+    } else if (kind === 'hatch') {
+      const sp = 90 + Math.random() * 200;
+      push({
+        kind, x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 170,
+        g: 380,
+        rot: 0,
+        vr: 0,
+        size: 3 + Math.random() * 5,
+        life: 0.8 + Math.random() * 0.6,
+        age: 0,
+        color: pick(COLORS.hatch),
+        shape: Math.random() < 0.5 ? 'star' : 'dot',
+      });
+    } else {
+      // sparkle
+      const sp = 30 + Math.random() * 90;
+      push({
+        kind: 'sparkle', x, y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp - 30,
+        g: 60,
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 4,
+        size: 2.5 + Math.random() * 4,
+        life: 0.5 + Math.random() * 0.5,
+        age: 0,
+        color: pick(COLORS.sparkle),
+        shape: 'star',
+      });
+    }
+  }
+
+  const DEFAULT_COUNT = { shatter: 26, confetti: 60, hatch: 30, sparkle: 12 };
+
+  function burst(kind, x, y, opts) {
+    if (reduced || !ctx) return;
+    const n = (opts && opts.count) || DEFAULT_COUNT[kind] || 12;
+    for (let i = 0; i < n; i++) spawnOne(kind, x, y);
+  }
+
+  function sparkleTrail(x, y) {
+    if (reduced || !ctx) return;
+    for (let i = 0; i < 2; i++) spawnOne('sparkle', x + (Math.random() - 0.5) * 12, y + (Math.random() - 0.5) * 12);
+  }
+
+  function setReduced(b) {
+    reduced = !!b;
+    if (reduced) {
+      live.length = 0;
+      if (ctx) ctx.clearRect(0, 0, cssW, cssH);
+    }
+  }
+
+  function drawStar(p, alpha) {
+    const s = p.size;
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.rotate(p.rot);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    // four-point twinkle
+    ctx.moveTo(0, -s);
+    ctx.quadraticCurveTo(s * 0.22, -s * 0.22, s, 0);
+    ctx.quadraticCurveTo(s * 0.22, s * 0.22, 0, s);
+    ctx.quadraticCurveTo(-s * 0.22, s * 0.22, -s, 0);
+    ctx.quadraticCurveTo(-s * 0.22, -s * 0.22, 0, -s);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function tick(dt) {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, cssW, cssH);
+    if (!live.length || !dt) {
+      // still clear so stale frames never linger after setReduced(true)
+      if (!live.length) return;
+    }
+    for (let i = live.length - 1; i >= 0; i--) {
+      const p = live[i];
+      p.age += dt;
+      if (p.age >= p.life || p.y > cssH + 80) {
+        live.splice(i, 1);
+        continue;
+      }
+      p.vy += p.g * dt;
+      if (p.shape === 'rect') {
+        p.wob += dt * 6;
+        p.x += (p.vx + Math.sin(p.wob) * 60) * dt;
+      } else {
+        p.x += p.vx * dt;
+      }
+      p.y += p.vy * dt;
+      p.rot += p.vr * dt;
+
+      const t = p.age / p.life;
+      const alpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+      if (p.shape === 'shard') {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = alpha * 0.95;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -p.size);
+        ctx.lineTo(p.size * 0.7, p.size * 0.6);
+        ctx.lineTo(-p.size * 0.7, p.size * 0.6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.globalAlpha = alpha * 0.35;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size * 0.45, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (p.shape === 'rect') {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.rot);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.size / 2, -p.size * 0.35, p.size, p.size * 0.7);
+        ctx.restore();
+      } else if (p.shape === 'star') {
+        drawStar(p, alpha);
+      } else {
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  function count() {
+    return live.length;
+  }
+
+  return { attach, burst, sparkleTrail, setReduced, tick, count };
+})();
+
+// === src/ui/world.js ===
+// WorldMap — the living kingdom map. Layered inline SVG: five floating islands
+// plus the Crystal Castle on a winding path. Per-land palettes, CSS idle
+// animations, locked = desaturated + crystal lock, completed = glow.
+// Sky = multi-stop gradient that warms with completion count (CSS background,
+// because SVG paint-server references are not allowed by the build rules).
+// API: WorldMap.render(container, view, onSelectLand)
+//   view = { lands: [{id, name, unlocked, stars}], completedCount, highlight }
+
+const WorldMap = (() => {
+  // sky palettes from cold twilight (0 lands freed) to warm aurora dawn (6)
+  const SKY = [
+    ['#0d0b30', '#1d1b4b', '#34255e'],
+    ['#110e38', '#262054', '#43306d'],
+    ['#151140', '#2e255e', '#553a78'],
+    ['#1a1448', '#3a2c6b', '#6d4a8e'],
+    ['#1f1850', '#4a357a', '#8a5a96'],
+    ['#241c58', '#5a4088', '#b06f93'],
+    ['#2a2160', '#6d4a9e', '#d98a82'],
+  ];
+
+  const SPOTS = {
+    woods:     { x: 140, y: 468 },
+    reef:      { x: 352, y: 540 },
+    mountains: { x: 548, y: 446 },
+    palace:    { x: 748, y: 522 },
+    summit:    { x: 882, y: 362 },
+    castle:    { x: 500, y: 188 },
+  };
+
+  function starPts(cx, cy, r) {
+    const pts = [];
+    for (let i = 0; i < 10; i++) {
+      const rad = i % 2 === 0 ? r : r * 0.45;
+      const a = -Math.PI / 2 + (i * Math.PI) / 5;
+      pts.push((cx + Math.cos(a) * rad).toFixed(1) + ',' + (cy + Math.sin(a) * rad).toFixed(1));
+    }
+    return pts.join(' ');
+  }
+
+  function islandBase(w, top, side) {
+    const hw = w / 2;
+    return (
+      '<ellipse cx="0" cy="0" rx="' + hw + '" ry="' + hw * 0.32 + '" fill="' + top + '"/>' +
+      '<path d="M' + -hw * 0.92 + ' 6 L' + -hw * 0.5 + ' ' + hw * 0.75 + ' L0 ' + hw * 0.95 +
+      ' L' + hw * 0.55 + ' ' + hw * 0.7 + ' L' + hw * 0.92 + ' 6 Q0 ' + hw * 0.42 + ' ' + -hw * 0.92 + ' 6 Z" fill="' + side + '"/>' +
+      '<path d="M' + -hw * 0.3 + ' ' + hw * 0.5 + ' L' + -hw * 0.18 + ' ' + hw * 0.82 +
+      ' L' + -hw * 0.02 + ' ' + hw * 0.55 + ' Z" fill="#f7f5ff" opacity="0.18"/>'
+    );
+  }
+
+  function decorWoods() {
+    let s = islandBase(150, '#3f9e63', '#5b4233');
+    const tree = (x, sc, cls) =>
+      '<g class="wm-tree ' + cls + '" transform="translate(' + x + ' 0) scale(' + sc + ')">' +
+      '<rect x="-3" y="-12" width="6" height="14" rx="2" fill="#7a5230"/>' +
+      '<path d="M0 -58 L20 -26 L-20 -26 Z" fill="#2f8a55"/>' +
+      '<path d="M0 -44 L24 -8 L-24 -8 Z" fill="#41ab6b"/>' +
+      '<circle cx="6" cy="-30" r="2.5" fill="#ffd166"/>' +
+      '</g>';
+    s += tree(-42, 0.9, '') + tree(2, 1.15, 't2') + tree(44, 0.85, 't3');
+    s += '<circle cx="-20" cy="-4" r="3" fill="#ffe9a8"/><circle cx="28" cy="-2" r="2.5" fill="#ffb3a3"/>';
+    return s;
+  }
+
+  function decorReef() {
+    let s = islandBase(150, '#1f9e92', '#3d6f8e');
+    s += '<path d="M-58 -6 Q0 -64 58 -6 Z" fill="#38cfc0" opacity="0.55"/>';
+    s += '<path class="wm-wave" d="M-48 -22 Q-34 -30 -20 -22 Q-6 -14 8 -22 Q22 -30 36 -22" fill="none" stroke="#d8fff9" stroke-width="3.5" stroke-linecap="round" opacity="0.7"/>';
+    s += '<path class="wm-wave w2" d="M-40 -38 Q-28 -45 -16 -38 Q-4 -31 8 -38 Q20 -45 32 -38" fill="none" stroke="#d8fff9" stroke-width="3" stroke-linecap="round" opacity="0.5"/>';
+    s += '<path d="M-30 -4 Q-34 -22 -24 -28 M-30 -4 Q-22 -16 -14 -18" fill="none" stroke="#ff8e7a" stroke-width="5" stroke-linecap="round"/>';
+    s += '<path d="M26 -2 Q24 -18 34 -24 M26 -2 Q32 -12 42 -12" fill="none" stroke="#ffb3a3" stroke-width="4.5" stroke-linecap="round"/>';
+    s += '<circle cx="2" cy="-12" r="4" fill="#ffd166"/><circle cx="12" cy="-26" r="3" fill="#f0abfc"/>';
+    return s;
+  }
+
+  function decorMountains() {
+    let s = islandBase(156, '#7d92c9', '#5a648f');
+    s += '<path d="M-58 -2 L-26 -58 L4 -2 Z" fill="#8ea2d8"/>';
+    s += '<path d="M-38 -36 L-26 -58 L-14 -36 L-20 -30 L-26 -38 L-32 -30 Z" fill="#f3f6ff"/>';
+    s += '<path d="M-14 -2 L26 -76 L62 -2 Z" fill="#a3b4e4"/>';
+    s += '<path d="M12 -50 L26 -76 L40 -50 L32 -42 L26 -52 L20 -42 Z" fill="#ffffff"/>';
+    s += '<circle class="wm-snow" cx="-34" cy="-40" r="2.6" fill="#ffffff"/>';
+    s += '<circle class="wm-snow s2" cx="6" cy="-52" r="2.2" fill="#ffffff"/>';
+    s += '<circle class="wm-snow s3" cx="40" cy="-34" r="2.8" fill="#ffffff"/>';
+    return s;
+  }
+
+  function decorPalace() {
+    let s = islandBase(150, '#8d76d8', '#5d4a9e');
+    const spire = (x, h, w, c, cls) =>
+      '<path d="M' + x + ' ' + -h + ' L' + (x + w / 2) + ' -6 L' + (x - w / 2) + ' -6 Z" fill="' + c + '"/>' +
+      '<path class="wm-facet ' + cls + '" d="M' + x + ' ' + -h + ' L' + (x + w / 4) + ' ' + (-h / 2.2) + ' L' + x + ' -6 Z" fill="#f4f1ff" opacity="0.6"/>';
+    s += spire(-34, 52, 26, '#a78bfa', '');
+    s += spire(0, 74, 32, '#c4b5fd', 'f2');
+    s += spire(34, 48, 24, '#b9a7ff', 'f3');
+    s += '<circle cx="0" cy="-80" r="4" fill="#ffd166"/>';
+    return s;
+  }
+
+  function decorSummit() {
+    let s = '<ellipse class="wm-halo" cx="0" cy="-34" rx="74" ry="52" fill="#ffd166" opacity="0.22"/>';
+    s += islandBase(146, '#caa34d', '#8c6b33');
+    s += '<path d="M-44 -2 L0 -72 L44 -2 Z" fill="#ffd166"/>';
+    s += '<path d="M-14 -2 L0 -72 L14 -2 Z" fill="#ffe9a8"/>';
+    s += '<path d="M0 -72 L0 -88 L16 -82 L0 -78 Z" fill="#ff8e7a"/>';
+    s += '<circle cx="-22" cy="-18" r="2.6" fill="#fff7df"/><circle cx="20" cy="-26" r="2.2" fill="#fff7df"/>';
+    return s;
+  }
+
+  function decorCastle() {
+    let s = '<ellipse class="wm-halo" cx="0" cy="-44" rx="96" ry="66" fill="#7ef0e2" opacity="0.2"/>';
+    s += islandBase(190, '#9adfdb', '#5d6fa8');
+    const tower = (x, h, w, c, cls) =>
+      '<rect x="' + (x - w / 2) + '" y="' + -h + '" width="' + w + '" height="' + (h - 4) + '" rx="4" fill="' + c + '"/>' +
+      '<path d="M' + (x - w / 2 - 3) + ' ' + -h + ' L' + x + ' ' + (-h - 20) + ' L' + (x + w / 2 + 3) + ' ' + -h + ' Z" fill="#c4b5fd"/>' +
+      '<path class="wm-facet ' + cls + '" d="M' + x + ' ' + (-h - 20) + ' L' + x + ' ' + -h + ' L' + (x + w / 2 + 3) + ' ' + -h + ' Z" fill="#f4f1ff" opacity="0.65"/>';
+    s += tower(-46, 56, 22, '#9adff0', '');
+    s += tower(46, 56, 22, '#9adff0', 'f3');
+    s += tower(0, 84, 34, '#bfeef5', 'f2');
+    s += '<rect x="-10" y="-34" width="20" height="28" rx="9" fill="#33254f" opacity="0.55"/>';
+    s += '<circle cx="0" cy="-112" r="5" fill="#ffd166"/>';
+    return s;
+  }
+
+  const DECOR = {
+    woods: decorWoods,
+    reef: decorReef,
+    mountains: decorMountains,
+    palace: decorPalace,
+    summit: decorSummit,
+    castle: decorCastle,
+  };
+
+  function lockIcon() {
+    return (
+      '<g class="wm-lock" transform="translate(0 -36)">' +
+      '<path d="M-10 -4 L-10 -12 Q-10 -24 0 -24 Q10 -24 10 -12 L10 -4" fill="none" stroke="#dcd6ff" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M-16 -4 L16 -4 L12 22 L0 28 L-12 22 Z" fill="#bfb6ea"/>' +
+      '<path d="M0 -4 L16 -4 L12 22 L0 28 Z" fill="#9d92d4"/>' +
+      '<circle cx="0" cy="9" r="4.5" fill="#4d4880"/>' +
+      '</g>'
+    );
+  }
+
+  function starsRow(stars) {
+    let s = '<g transform="translate(0 30)">';
+    for (let i = 0; i < 3; i++) {
+      const x = (i - 1) * 24;
+      const lit = i < stars;
+      s += '<polygon points="' + starPts(x, 0, 10) + '" fill="' + (lit ? '#ffd166' : 'rgba(247,245,255,0.22)') + '"' +
+        (lit ? ' stroke="#fff3c4" stroke-width="1"' : '') + '/>';
+    }
+    return s + '</g>';
+  }
+
+  function landGroup(land, isNext) {
+    const spot = SPOTS[land.id];
+    if (!spot) return '';
+    const state = land.stars > 0 ? 'done' : land.unlocked ? 'open' : 'locked';
+    const decor = DECOR[land.id] ? DECOR[land.id]() : '';
+    const big = land.id === 'castle';
+    return (
+      '<g class="wm-land' + (isNext ? ' wm-next' : '') + '" data-land="' + land.id + '" data-state="' + state +
+      '" role="button" aria-label="' + land.name + '" transform="translate(' + spot.x + ' ' + spot.y + ')">' +
+      '<ellipse class="wm-ring" cx="0" cy="-10" rx="' + (big ? 112 : 92) + '" ry="' + (big ? 84 : 70) +
+      '" fill="none" stroke="#ffd166" stroke-width="4" opacity="0"/>' +
+      (state === 'done' ? '<ellipse class="wm-doneglow" cx="0" cy="-16" rx="' + (big ? 104 : 84) + '" ry="' + (big ? 74 : 60) + '" fill="#ffd166" opacity="0.35"/>' : '') +
+      '<g class="wm-float">' + decor +
+      (state === 'locked' ? lockIcon() : '') +
+      starsRow(land.stars) +
+      '<text class="wm-name" x="0" y="62" text-anchor="middle" font-size="' + (big ? 24 : 21) +
+      '" fill="#f7f5ff" stroke="#12103a" stroke-width="4" paint-order="stroke">' + land.name + '</text>' +
+      '</g>' +
+      '<rect x="' + (big ? -120 : -100) + '" y="' + (big ? -150 : -130) + '" width="' + (big ? 240 : 200) +
+      '" height="' + (big ? 240 : 210) + '" fill="none" pointer-events="all"/>' +
+      '</g>'
+    );
+  }
+
+  function skyBits() {
+    let s = '';
+    const seeds = [37, 91, 153, 222, 318, 411, 489, 566, 648, 731, 808, 877, 944, 263, 692];
+    for (let i = 0; i < seeds.length; i++) {
+      const x = seeds[i];
+      const y = 24 + ((x * 7919) % 230);
+      const r = 1.2 + ((x * 31) % 10) / 6;
+      s += '<circle class="wm-skystar" cx="' + x + '" cy="' + y + '" r="' + r.toFixed(1) +
+        '" fill="#f7f5ff" style="animation-delay:' + (-(x % 24) / 10) + 's"/>';
+    }
+    s += '<path class="wm-aurora" d="M-20 120 Q180 40 420 96 Q700 160 1020 70 L1020 10 Q660 96 380 44 Q160 4 -20 60 Z" fill="#7ef0e2" opacity="0.35"/>';
+    s += '<path class="wm-aurora" style="animation-delay:-4.5s" d="M-20 170 Q240 90 520 140 Q780 186 1020 120 L1020 86 Q760 150 520 108 Q260 64 -20 130 Z" fill="#c4b5fd" opacity="0.3"/>';
+    const cloud = (cls, y, sc) =>
+      '<g class="wm-cloud ' + cls + '" opacity="0.5" transform="translate(0 ' + y + ') scale(' + sc + ')">' +
+      '<ellipse cx="0" cy="0" rx="46" ry="16" fill="#f7f5ff" opacity="0.5"/>' +
+      '<ellipse cx="-26" cy="6" rx="28" ry="11" fill="#f7f5ff" opacity="0.4"/>' +
+      '<ellipse cx="30" cy="7" rx="26" ry="10" fill="#f7f5ff" opacity="0.4"/></g>';
+    s += cloud('', 96, 1) + cloud('c2', 200, 0.8) + cloud('c3', 58, 0.6);
+    return s;
+  }
+
+  function windingPath() {
+    const order = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+    let d = '';
+    for (let i = 0; i < order.length; i++) {
+      const p = SPOTS[order[i]];
+      if (i === 0) {
+        d = 'M' + p.x + ' ' + p.y;
+      } else {
+        const prev = SPOTS[order[i - 1]];
+        const mx = (prev.x + p.x) / 2;
+        const my = Math.min(prev.y, p.y) - 46;
+        d += ' Q' + mx + ' ' + my + ' ' + p.x + ' ' + p.y;
+      }
+    }
+    return '<path class="wm-path" d="' + d + '" fill="none" stroke="#f7f5ff" stroke-width="5" stroke-linecap="round" opacity="0.45"/>';
+  }
+
+  function render(container, view, onSelectLand) {
+    const warmth = Math.max(0, Math.min(SKY.length - 1, view.completedCount | 0));
+    const sky = SKY[warmth];
+    container.style.background =
+      'linear-gradient(180deg, ' + sky[0] + ' 0%, ' + sky[1] + ' 52%, ' + sky[2] + ' 100%)';
+
+    let svg = '<svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMid meet" aria-label="Kingdom map">';
+    svg += skyBits();
+    svg += windingPath();
+    for (const land of view.lands) {
+      svg += landGroup(land, view.highlight === land.id);
+    }
+    svg += '</svg>';
+    container.innerHTML = svg;
+
+    container.onclick = (e) => {
+      const t = e.target;
+      const g = t && t.closest ? t.closest('.wm-land') : null;
+      if (g && onSelectLand) onSelectLand(g.getAttribute('data-land'));
+    };
+  }
+
+  return { render };
+})();
+
+// === src/ui/avatar.js ===
+// Avatar — SVG gymnast with ponytail and gradient leotard.
+// Avatar.mount(el) injects the rig; Avatar.trick(streakN) plays a CSS-keyframe
+// trick that varies with streak length; Avatar.idle() returns to the idle bob.
+// Reduced motion: CSS swaps every trick for a gentle bounce (styles.css).
+// Note: SVG paint-server references are not allowed by the build rules, so the
+// leotard "gradient" is layered solid fills (violet -> sea -> teal).
+
+const Avatar = (() => {
+  let rigEl = null;
+  let hostEl = null;
+  let trickTimer = 0;
+
+  const TRICKS = ['av-cartwheel', 'av-flip', 'av-stuck'];
+  const TRICK_MS = { 'av-cartwheel': 1050, 'av-flip': 1100, 'av-stuck': 1400 };
+
+  const SVG = [
+    '<svg viewBox="0 0 120 170" role="img" aria-label="Charlie the gymnast">',
+    '<g class="av-rig av-idle">',
+    // ponytail (behind the head, swings)
+    '<g class="av-pony">',
+    '<path d="M76 26 Q98 30 96 56 Q94 74 84 80 Q90 60 80 46 Q74 36 72 32 Z" fill="#6b4226"/>',
+    '<circle cx="77" cy="29" r="5" fill="#ffd166"/>',
+    '</g>',
+    // head + hair
+    '<circle cx="60" cy="34" r="17" fill="#f2c39b"/>',
+    '<path d="M43 32 Q44 14 60 14 Q76 14 77 32 Q70 22 60 22 Q50 22 43 32 Z" fill="#7a4a2b"/>',
+    // face
+    '<circle cx="54" cy="34" r="2.4" fill="#33254f"/>',
+    '<circle cx="66" cy="34" r="2.4" fill="#33254f"/>',
+    '<path d="M53 42 Q60 48 67 42" fill="none" stroke="#b3604a" stroke-width="2.6" stroke-linecap="round"/>',
+    '<circle cx="49" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
+    '<circle cx="71" cy="40" r="3" fill="#ff8e7a" opacity="0.55"/>',
+    // arms raised in a V (gymnast salute)
+    '<path d="M46 62 Q32 50 26 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
+    '<path d="M74 62 Q88 50 94 34" fill="none" stroke="#f2c39b" stroke-width="8" stroke-linecap="round"/>',
+    // leotard torso — layered fills fake a violet-to-teal gradient
+    '<path d="M46 56 Q60 50 74 56 L78 92 Q60 102 42 92 Z" fill="#8b5cf6"/>',
+    '<path d="M44.5 74 Q60 70 75.5 74 L78 92 Q60 102 42 92 Z" fill="#56a8d6" opacity="0.85"/>',
+    '<path d="M43.4 84 Q60 80 76.7 84 L78 92 Q60 102 42 92 Z" fill="#2dd4bf" opacity="0.95"/>',
+    // legs
+    '<path d="M50 96 L46 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
+    '<path d="M70 96 L74 140" fill="none" stroke="#f2c39b" stroke-width="9" stroke-linecap="round"/>',
+    // slippers
+    '<ellipse cx="45" cy="145" rx="8" ry="4.5" fill="#a78bfa"/>',
+    '<ellipse cx="75" cy="145" rx="8" ry="4.5" fill="#a78bfa"/>',
+    // leotard sparkles
+    '<circle cx="55" cy="66" r="2" fill="#ffe9a8"/>',
+    '<circle cx="66" cy="78" r="1.7" fill="#ffe9a8"/>',
+    '<circle cx="60" cy="88" r="1.4" fill="#f7f5ff"/>',
+    '</g>',
+    '</svg>',
+  ].join('');
+
+  function mount(el) {
+    if (!el) return;
+    hostEl = el;
+    el.classList.add('avatar');
+    el.innerHTML = SVG;
+    rigEl = el.querySelector('.av-rig');
+    idle();
+  }
+
+  function clearTricks() {
+    if (!rigEl) return;
+    for (const t of TRICKS) rigEl.classList.remove(t);
+  }
+
+  function idle() {
+    if (!rigEl) return;
+    if (trickTimer) {
+      clearTimeout(trickTimer);
+      trickTimer = 0;
+    }
+    clearTricks();
+    rigEl.classList.add('av-idle');
+  }
+
+  // streakN: current first-try streak. 1 → cartwheel, 2 → flip, 3+ → stuck landing.
+  function trick(streakN) {
+    if (!rigEl) return;
+    const n = Math.max(1, streakN | 0);
+    const name = n >= 3 ? 'av-stuck' : TRICKS[(n - 1) % 2];
+    if (trickTimer) clearTimeout(trickTimer);
+    clearTricks();
+    rigEl.classList.remove('av-idle');
+    // force a reflow so re-triggering the same trick restarts the animation
+    void rigEl.getBoundingClientRect();
+    rigEl.classList.add(name);
+    trickTimer = setTimeout(idle, TRICK_MS[name] || 1200);
+  }
+
+  // helper for main.js: screen-space center of the avatar (sparkle trail origin)
+  function center() {
+    if (!hostEl) return null;
+    const r = hostEl.getBoundingClientRect();
+    if (!r.width) return null;
+    return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+  }
+
+  return { mount, trick, idle, center };
+})();
+
+// === src/ui/screens.js ===
+// Screens — innerHTML template renderers + small DOM helpers for every screen.
+// main.js owns routing and delegated events; everything here only paints.
+
+
+const Screens = (() => {
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) =>
+      c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : c === '"' ? '&quot;' : '&#39;'
+    );
+  }
+
+  // ---------- title ----------
+  function title(el) {
+    el.innerHTML =
+      '<section class="screen screen-title">' +
+      '<div class="title-gem">💎</div>' +
+      '<h1 class="game-title"><span><span class="title-spark">✦</span> Charlie&#39;s <span class="title-spark">✦</span></span>' +
+      '<span class="grad">Crystal Kingdom</span></h1>' +
+      '<p class="title-sub">A tumbling quest through five floating lands</p>' +
+      '<button class="btn btn-play" data-action="play" data-press>Play</button>' +
+      '</section>';
+  }
+
+  // ---------- map shell (WorldMap paints into [data-worldmap]) ----------
+  function map(el, opts) {
+    el.innerHTML =
+      '<section class="screen screen-map">' +
+      '<div class="map-stage" data-worldmap></div>' +
+      '<header class="map-top">' +
+      '<h1 class="map-title">Charlie&#39;s Crystal Kingdom</h1>' +
+      '<div class="map-actions">' +
+      '<button class="btn btn-ghost" data-action="friends" data-press>🦊 Friends</button>' +
+      '<button class="btn btn-ghost" data-action="settings" data-press aria-label="Settings">⚙️</button>' +
+      '</div></header>' +
+      '</section>';
+  }
+
+  // ---------- challenge ----------
+  function dotsHtml(cur, ctx) {
+    // Render the dot row from ORIGINAL challenge counts so a requeued item
+    // never grows the row (the finish line must never move away after a miss)
+    // and the egg markers stay pinned to original challenges 3 and 6.
+    // A requeued item simply shows as the current dot.
+    const hasOriginals =
+      cur.phase === 'challenge' &&
+      typeof cur.originalsTotal === 'number' &&
+      typeof cur.originalsDone === 'number';
+    const total = hasOriginals ? cur.originalsTotal : cur.total;
+    const nowAt = hasOriginals ? Math.min(cur.originalsDone + 1, total) : cur.index;
+    let s = '<div class="dots" aria-hidden="true">';
+    for (let i = 1; i <= total; i++) {
+      let cls = 'dot';
+      if (i < nowAt) cls += ' done';
+      else if (i === nowAt) cls += ' now';
+      if (cur.phase === 'challenge' && ctx.landId !== 'castle' && (i === 3 || i === 6)) cls += ' dot-egg';
+      s += '<span class="' + cls + '"></span>';
+    }
+    return s + '</div>';
+  }
+
+  function golemSvg() {
+    return (
+      '<svg viewBox="0 0 100 100" aria-label="Crystal golem">' +
+      '<g class="golem-rig">' +
+      '<path d="M50 14 L62 30 L56 34 L50 24 L44 34 L38 30 Z" fill="#7ef0e2"/>' +
+      '<path d="M20 86 Q12 56 30 42 Q40 30 50 30 Q60 30 70 42 Q88 56 80 86 Z" fill="#6f6a9c"/>' +
+      '<path d="M50 30 Q60 30 70 42 Q88 56 80 86 L50 86 Z" fill="#5d5890"/>' +
+      '<path d="M14 56 L26 44 L32 58 L22 66 Z" fill="#b9a7ff"/>' +
+      '<path d="M86 56 L74 44 L68 58 L78 66 Z" fill="#b9a7ff"/>' +
+      '<path d="M30 50 L40 46 L38 56 Z" fill="#7ef0e2" opacity="0.85"/>' +
+      '<path d="M70 50 L60 46 L62 56 Z" fill="#7ef0e2" opacity="0.85"/>' +
+      // grumpy brows + eyes + frown
+      '<path d="M34 56 L46 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
+      '<path d="M66 56 L54 60" stroke="#241f52" stroke-width="4" stroke-linecap="round"/>' +
+      '<circle cx="41" cy="66" r="3.4" fill="#241f52"/>' +
+      '<circle cx="59" cy="66" r="3.4" fill="#241f52"/>' +
+      '<path d="M42 78 Q50 73 58 78" fill="none" stroke="#241f52" stroke-width="3.6" stroke-linecap="round"/>' +
+      '</g></svg>'
+    );
+  }
+
+  function bossBarHtml(cur, ctx) {
+    let segs = '';
+    for (let i = 0; i < cur.bossTotal; i++) {
+      segs += '<div class="shell-seg' + (i < ctx.bossHits ? ' cracked' : '') + '" data-seg="' + i + '"></div>';
+    }
+    return (
+      '<div class="boss-bar">' +
+      '<div class="golem" data-golem>' + golemSvg() + '</div>' +
+      '<div style="flex:1;display:flex;flex-direction:column;gap:8px;min-width:0">' +
+      '<div class="boss-name">' + esc(ctx.bossName || 'The Crystal Golem') + '</div>' +
+      '<div class="shell" data-shell>' + segs + '</div>' +
+      '</div></div>'
+    );
+  }
+
+  function tilesHtml(item) {
+    let slots = '';
+    for (let i = 0; i < item.word.length; i++) {
+      slots += '<span class="slot" data-slot="' + i + '"></span>';
+    }
+    let bank = '';
+    for (let i = 0; i < item.tiles.length; i++) {
+      bank +=
+        '<button class="tile" data-press data-tile="' + esc(item.tiles[i]) + '" data-ti="' + i + '">' +
+        esc(item.tiles[i]) + '</button>';
+    }
+    bank += '<button class="tile tile-back" data-press data-action="backspace" aria-label="Take a letter back">⌫</button>';
+    return (
+      '<div class="word-clue"><span class="clue-emoji">' + esc(item.emoji || '✨') + '</span>' +
+      '<span class="clue-text">' + esc(item.clue || '') + '</span></div>' +
+      '<div class="slots" data-slots>' + slots + '</div>' +
+      '<div class="tile-bank" data-bank>' + bank + '</div>'
+    );
+  }
+
+  function choicesHtml(item) {
+    const multi = Array.isArray(item.answerIndices);
+    let cls = 'choices';
+    if (item.bigChoices) cls += ' big';
+    if (item.choices.length === 3) cls += ' n3';
+    let s = '<div class="' + cls + '" data-choices' + (multi ? ' data-multi="2"' : '') + '>';
+    for (let i = 0; i < item.choices.length; i++) {
+      s += '<button class="choice" data-press data-choice="' + i + '">' + esc(item.choices[i]) + '</button>';
+    }
+    return s + '</div>';
+  }
+
+  function challenge(el, cur, ctx) {
+    const item = cur.item;
+    const isBoss = cur.phase === 'boss';
+    el.innerHTML =
+      '<section class="screen screen-challenge">' +
+      '<header class="ch-top">' +
+      '<button class="btn btn-ghost" data-action="back-map" data-press>🗺️ Map</button>' +
+      dotsHtml(cur, ctx) +
+      '<span class="ch-top-right">' +
+      '<button class="btn btn-ghost" data-action="toggle-mute" data-press data-mute-icon aria-label="Sound on or off">' +
+      muteIcon(ctx.muted) + '</button>' +
+      '<span class="ch-land-chip">' + esc(ctx.landName) + '</span>' +
+      '</span>' +
+      '</header>' +
+      '<div class="ch-body">' +
+      '<aside class="ch-avatar"><div data-avatar></div></aside>' +
+      '<div class="ch-main">' +
+      (isBoss ? bossBarHtml(cur, ctx) : '') +
+      (item.passage ? '<div class="card passage-card" data-passage>' + esc(item.passage) + '</div>' : '') +
+      '<div class="card challenge-card" data-card>' +
+      '<p class="prompt">' + esc(item.prompt) + '</p>' +
+      (item.type === 'tiles' ? tilesHtml(item) : choicesHtml(item)) +
+      '<div class="feedback" data-feedback hidden></div>' +
+      '<div class="hint-card" data-hint hidden>' +
+      '<div class="hint-top" data-hint-top></div>' +
+      '<div class="hint-line">💡 <span data-hint-line></span></div></div>' +
+      '<div class="reveal-card" data-reveal hidden>' +
+      '<div class="reveal-top" data-reveal-top></div>' +
+      '<div class="reveal-line" data-reveal-line></div></div>' +
+      '</div></div></div>' +
+      '</section>';
+  }
+
+  // ---------- challenge helpers ----------
+  function setSlot(root, idx, letter) {
+    const slot = root.querySelector('[data-slot="' + idx + '"]');
+    if (!slot) return;
+    slot.textContent = letter || '';
+    slot.classList.toggle('filled', !!letter);
+    slot.classList.remove('reveal-fill');
+  }
+
+  function fillSlotsWith(root, word) {
+    const slots = root.querySelectorAll('[data-slot]');
+    for (let i = 0; i < slots.length; i++) {
+      slots[i].textContent = word[i] || '';
+      slots[i].classList.add('filled', 'reveal-fill');
+    }
+  }
+
+  function showFeedback(root, text) {
+    const f = root.querySelector('[data-feedback]');
+    if (!f) return;
+    f.textContent = text;
+    f.hidden = false;
+  }
+
+  // Hint/reveal cards live at the card bottom — bring them into view so they
+  // are never unveiled below the fold. All callers benefit from this.
+  function scrollNoteIntoView(el) {
+    try {
+      if (!el || !el.scrollIntoView) return;
+      let smooth = true;
+      try { smooth = !Juice.reducedMotion(); } catch (e) { /* default smooth */ }
+      el.scrollIntoView({ block: 'nearest', behavior: smooth ? 'smooth' : 'auto' });
+    } catch (e) { /* never break the retry flow over a scroll */ }
+  }
+
+  function showHint(root, missText, hintText) {
+    const h = root.querySelector('[data-hint]');
+    if (!h) return;
+    root.querySelector('[data-hint-top]').textContent = missText;
+    root.querySelector('[data-hint-line]').textContent = hintText;
+    h.hidden = false;
+    scrollNoteIntoView(h);
+  }
+
+  function showReveal(root, revealText, explainText) {
+    const r = root.querySelector('[data-reveal]');
+    if (!r) return;
+    const h = root.querySelector('[data-hint]');
+    if (h) h.hidden = true;
+    root.querySelector('[data-reveal-top]').textContent = revealText;
+    root.querySelector('[data-reveal-line]').textContent = explainText;
+    r.hidden = false;
+    scrollNoteIntoView(r);
+  }
+
+  function clearNotes(root) {
+    for (const sel of ['[data-feedback]', '[data-hint]', '[data-reveal]']) {
+      const n = root.querySelector(sel);
+      if (n) n.hidden = true;
+    }
+  }
+
+  function markChoiceAnswer(root, answer) {
+    const idxs = Array.isArray(answer) ? answer : [answer];
+    for (const i of idxs) {
+      const btn = root.querySelector('[data-choice="' + i + '"]');
+      if (btn) btn.classList.add('is-answer');
+    }
+  }
+
+  function crackShell(root, hits) {
+    const segs = root.querySelectorAll('.shell-seg');
+    for (let i = 0; i < segs.length; i++) {
+      segs[i].classList.toggle('cracked', i < hits);
+    }
+  }
+
+  function golemPlay(root, cls) {
+    const g = root.querySelector('[data-golem]');
+    if (!g) return;
+    g.classList.remove('hit', 'block');
+    void g.getBoundingClientRect();
+    g.classList.add(cls);
+    setTimeout(() => { if (g.isConnected) g.classList.remove(cls); }, 650);
+  }
+
+  // ---------- celebration ----------
+  function celebration(el, data) {
+    let stars = '';
+    for (let i = 1; i <= 3; i++) {
+      stars += '<span class="cele-star" data-star="' + i + '">⭐</span>';
+    }
+    el.innerHTML =
+      '<section class="screen screen-celebrate" data-celebrate>' +
+      '<button class="btn btn-ghost cele-mute" data-action="toggle-mute" data-press data-mute-icon aria-label="Sound on or off">' +
+      muteIcon(data.muted) + '</button>' +
+      '<h1 class="cele-title">' + esc(data.landName) + ' is free!</h1>' +
+      '<div class="cele-stars">' + stars + '</div>' +
+      (data.companion ? '<div class="cele-egg wobble" data-egg hidden>🥚</div>' : '') +
+      (data.companion
+        ? '<div class="card cele-card" data-companion hidden>' +
+          '<span class="friend-emoji">' + esc(data.companion.emoji) + '</span>' +
+          '<span class="friend-name">' + esc(data.companion.name) + '</span>' +
+          '<span class="friend-line">' + esc(data.companion.line || '') + '</span></div>'
+        : '') +
+      '<button class="btn btn-primary btn-big cele-continue" data-action="continue" data-press hidden>Continue ➜</button>' +
+      '<div class="cele-skip-note" data-skip-note hidden>Tap anywhere to hurry</div>' +
+      '</section>';
+  }
+
+  // ---------- mid-run egg hatch overlay ----------
+  function eggOverlay(host, companion) {
+    const wrap = document.createElement('div');
+    wrap.className = 'egg-overlay';
+    wrap.innerHTML =
+      '<div class="card egg-card">' +
+      '<span class="cele-egg wobble" data-egg>🥚</span>' +
+      '<span class="friend-emoji" data-egg-friend hidden>' + esc(companion.emoji) + '</span>' +
+      '<span class="friend-name" data-egg-name hidden>' + esc(companion.name) + '</span>' +
+      '<span class="friend-line" data-egg-line hidden>' + esc(companion.line || '') + '</span>' +
+      '<button class="btn btn-primary" data-action="egg-ok" data-press hidden>Hooray!</button>' +
+      '</div>';
+    host.appendChild(wrap);
+    return wrap;
+  }
+
+  function eggHatch(wrap) {
+    const egg = wrap.querySelector('[data-egg]');
+    if (egg) egg.remove();
+    for (const sel of ['[data-egg-friend]', '[data-egg-name]', '[data-egg-line]', '[data-action="egg-ok"]']) {
+      const n = wrap.querySelector(sel);
+      if (n) n.hidden = false;
+    }
+  }
+
+  // ---------- collection ----------
+  function collection(el, list, hatchedIds, landNames) {
+    const have = new Set(hatchedIds || []);
+    let cards = '';
+    for (const c of list) {
+      const hatched = have.has(c.id);
+      cards +=
+        '<div class="card friend' + (hatched ? '' : ' friend-shadow') + '">' +
+        '<span class="friend-emoji' + (hatched ? ' bob' : '') + '">' + esc(c.emoji) + '</span>' +
+        '<span class="friend-name">' + (hatched ? esc(c.name) : 'A mystery friend') + '</span>' +
+        '<span class="friend-land">' + esc((landNames && landNames[c.land]) || c.land) + '</span>' +
+        '</div>';
+    }
+    el.innerHTML =
+      '<section class="screen screen-friends">' +
+      '<header class="friends-top">' +
+      '<button class="btn btn-ghost" data-action="back-map" data-press>🗺️ Map</button>' +
+      '<h1 class="friends-title">Charlie&#39;s Friends</h1>' +
+      '</header>' +
+      '<div class="friends-grid">' + cards + '</div>' +
+      '</section>';
+  }
+
+  // ---------- settings overlay ----------
+  function settings(host, opts) {
+    const wrap = document.createElement('div');
+    wrap.className = 'overlay';
+    wrap.setAttribute('data-settings-overlay', '');
+    wrap.innerHTML =
+      '<div class="card settings-card">' +
+      '<h2>Settings</h2>' +
+      '<button class="btn btn-big" data-action="toggle-mute" data-press data-mute-btn>' +
+      muteLabel(opts && opts.muted) + '</button>' +
+      '<p class="settings-note">Animations follow this device&#39;s motion setting.</p>' +
+      '<p class="settings-note">Replay any land from the map — stars only grow!</p>' +
+      '<button class="btn btn-primary" data-action="close-settings" data-press>Done</button>' +
+      '</div>';
+    host.appendChild(wrap);
+    return wrap;
+  }
+
+  function muteLabel(muted) {
+    return muted ? '🔇 Sound is off' : '🔊 Sound is on';
+  }
+
+  function muteIcon(muted) {
+    return muted ? '🔇' : '🔊';
+  }
+
+  // ---------- leave-land confirm overlay ----------
+  function leaveConfirm(host) {
+    const wrap = document.createElement('div');
+    wrap.className = 'overlay';
+    wrap.setAttribute('data-leave-overlay', '');
+    wrap.innerHTML =
+      '<div class="card settings-card">' +
+      '<h2>Leave this land?</h2>' +
+      '<button class="btn btn-primary btn-big" data-action="leave-stay" data-press>Keep playing!</button>' +
+      '<button class="btn btn-big" data-action="leave-go" data-press>🗺️ Go to map</button>' +
+      '</div>';
+    host.appendChild(wrap);
+    return wrap;
+  }
+
+  return {
+    title, map, challenge, celebration, collection, settings, eggOverlay, eggHatch,
+    setSlot, fillSlotsWith, showFeedback, showHint, showReveal, clearNotes,
+    markChoiceAnswer, crackShell, golemPlay, muteLabel, muteIcon, leaveConfirm,
+  };
+})();
+
+// === src/ui/main.js ===
+// Main — wires engine, content, audio, juice, particles, world map, avatar and
+// screens together. Owns the single rAF loop, screen routing, delegated events,
+// the Outcome.events -> audio/particles/toast mapping, and the celebration beat.
+
+
+const Main = (() => {
+  const LAND_ORDER = ['woods', 'reef', 'mountains', 'palace', 'summit', 'castle'];
+  const LAND_NAMES = {
+    woods: 'Word Woods', reef: 'Rhyme Reef', mountains: 'Number Mountains',
+    palace: 'Pattern Palace', summit: 'Story Summit', castle: 'Crystal Castle',
+  };
+
+  let app = null;
+  let game = null;
+  let run = null;
+  let screen = 'title';
+  let landId = null;
+  let curView = null;        // latest run.current()
+  let bossHits = 0;
+  let bossIntroShown = false;
+  let busy = false;          // input lock while an outcome plays
+  let slotsArr = [];         // [{letter, el}] for tile entry
+  let selection = [];        // picked indices for multi-select
+  let pendingSubmitTimer = 0;
+  let pendingEgg = null;
+  let eggWrap = null;
+  let settingsEl = null;
+  let leaveEl = null;        // "Leave this land?" confirm overlay
+  let originalsDone = 0;     // resolved ORIGINAL (non-requeued) challenges, for the dot row
+  let revealPending = false; // reveal is showing; tap advances after the hold
+  let advanceDeferred = false; // an auto-advance fired while the leave-confirm was open
+  let revealReadyTs = 0;     // earliest time a tap may advance the reveal
+  let trailUntil = 0;
+  let lastTs = 0;
+  let celeStart = 0;
+  let celeDone = true;
+  let celeFinal = null;      // function that jumps celebration to its end state
+
+  const timers = [];
+  function timer(ms, fn) {
+    const id = setTimeout(() => {
+      const i = timers.indexOf(id);
+      if (i > -1) timers.splice(i, 1);
+      fn();
+    }, ms);
+    timers.push(id);
+    return id;
+  }
+  function clearTimers() {
+    while (timers.length) clearTimeout(timers.pop());
+    if (pendingSubmitTimer) {
+      clearTimeout(pendingSubmitTimer);
+      pendingSubmitTimer = 0;
+    }
+  }
+
+  function landName(id) {
+    return (Copy.landNames && Copy.landNames[id]) || LAND_NAMES[id] || id;
+  }
+  function isMuted() {
+    return !!(game && game.state && game.state.settings && game.state.settings.muted);
+  }
+  function reduced() {
+    try { return Juice.reducedMotion(); } catch (e) { return false; }
+  }
+  function centerOf(el) {
+    if (el) {
+      const r = el.getBoundingClientRect();
+      if (r.width || r.height) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+    }
+    return { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+  }
+
+  // ---------------- boot ----------------
+  function boot() {
+    app = document.getElementById('app');
+    const fx = document.getElementById('fx');
+    Particles.attach(fx);
+
+    game = Engine.create({
+      content: Content,
+      copy: Copy,
+      companions: Companions,
+      store: Persist.createStore(),
+      rng: Math.random,
+    });
+
+    AudioKit.setMuted(isMuted());
+
+    // reduced motion: bursts become no-ops; CSS fades take over
+    Particles.setReduced(reduced());
+    try {
+      const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+      if (mq && mq.addEventListener) mq.addEventListener('change', (e) => Particles.setReduced(e.matches));
+    } catch (e) { /* matchMedia always exists on target Safari */ }
+
+    // Safari requires a user gesture before audio starts. init() is idempotent,
+    // so EVERY pointerdown re-runs it — this also revives a context that iOS
+    // parked in the non-standard 'interrupted' state (app switch, lock, Siri).
+    document.addEventListener('pointerdown', () => AudioKit.init(), { capture: true });
+    // ...and nudge an existing context awake when the page becomes visible again.
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) AudioKit.poke();
+    });
+    // soft pop on any button press
+    app.addEventListener('pointerdown', (e) => {
+      const t = e.target;
+      // a reach for backspace must always beat the tile auto-submit
+      if (t && t.closest && t.closest('[data-action="backspace"]') && pendingSubmitTimer) {
+        clearTimeout(pendingSubmitTimer);
+        pendingSubmitTimer = 0;
+      }
+      if (t && t.closest && t.closest('button')) AudioKit.play('tap');
+    });
+    Juice.pressify(app);
+    app.addEventListener('click', onTap);
+
+    requestAnimationFrame(loop);
+    showTitle();
+  }
+
+  // ---------------- single rAF loop ----------------
+  function loop(ts) {
+    const dt = lastTs ? Math.min((ts - lastTs) / 1000, 0.05) : 0;
+    lastTs = ts;
+    if (ts < trailUntil) {
+      const c = Avatar.center();
+      if (c) Particles.sparkleTrail(c.x + (Math.random() - 0.5) * 50, c.y + (Math.random() - 0.5) * 60);
+    }
+    Particles.tick(dt);
+    requestAnimationFrame(loop);
+  }
+
+  // ---------------- delegated input ----------------
+  function onTap(e) {
+    const t = e.target;
+    // overlay backdrop tap dismisses, same as the overlay's own button
+    if (t && t.classList && t.classList.contains('overlay')) {
+      if (t.hasAttribute('data-settings-overlay')) closeSettings();
+      else if (t.hasAttribute('data-leave-overlay')) closeLeaveConfirm(true);
+      return;
+    }
+    const actBtn = t && t.closest ? t.closest('[data-action]') : null;
+    if (actBtn) {
+      handleAction(actBtn.getAttribute('data-action'), actBtn);
+      return;
+    }
+    if (screen === 'celebrate') {
+      onCeleTap();
+      return;
+    }
+    if (screen === 'challenge' && revealPending) {
+      // reveal: a tap moves on once the minimum hold has passed
+      if (performance.now() >= revealReadyTs) {
+        revealPending = false;
+        proceedAfterResolve();
+      }
+      return;
+    }
+    if (screen !== 'challenge' || busy || !run) return;
+    const tile = e.target.closest('[data-tile]');
+    if (tile) {
+      tapTile(tile);
+      return;
+    }
+    const ch = e.target.closest('[data-choice]');
+    if (ch) tapChoice(ch);
+  }
+
+  function handleAction(action, btn) {
+    if (action === 'play') showMap();
+    else if (action === 'back-map') {
+      // mid-run, confirm before leaving the land
+      if (screen === 'challenge' && run) openLeaveConfirm();
+      else { clearTimers(); run = null; showMap(); }
+    }
+    else if (action === 'leave-stay') closeLeaveConfirm(true);
+    else if (action === 'leave-go') { closeLeaveConfirm(); clearTimers(); run = null; showMap(); }
+    else if (action === 'friends') showCollection();
+    else if (action === 'settings') openSettings();
+    else if (action === 'close-settings') closeSettings();
+    else if (action === 'toggle-mute') toggleMute(btn);
+    else if (action === 'backspace') tilesBackspace();
+    else if (action === 'continue') { clearTimers(); showMap(); }
+    else if (action === 'egg-ok') resolveEgg();
+  }
+
+  // ---------------- routing ----------------
+  function showTitle() {
+    clearTimers();
+    screen = 'title';
+    app.removeAttribute('data-land');
+    Screens.title(app);
+  }
+
+  function nextLandHighlight() {
+    for (const id of LAND_ORDER) {
+      const st = game.landStatus(id);
+      if (st.unlocked && st.stars === 0) return id;
+    }
+    return null;
+  }
+
+  function showMap(highlight) {
+    clearTimers();
+    run = null;
+    screen = 'map';
+    app.removeAttribute('data-land');
+    Screens.map(app);
+    const container = app.querySelector('[data-worldmap]');
+    const lands = LAND_ORDER.map((id) => {
+      const st = game.landStatus(id);
+      return { id, name: landName(id), unlocked: st.unlocked, stars: st.stars };
+    });
+    const completedCount = lands.filter((l) => l.stars > 0).length;
+    const hl = highlight === undefined ? nextLandHighlight() : highlight;
+    WorldMap.render(container, { lands, completedCount, highlight: hl }, startLand);
+  }
+
+  function showCollection() {
+    clearTimers();
+    screen = 'friends';
+    app.removeAttribute('data-land');
+    Screens.collection(app, Companions.list, game.state.companions, Copy.landNames || LAND_NAMES);
+  }
+
+  function openSettings() {
+    if (settingsEl && settingsEl.isConnected) return;
+    settingsEl = Screens.settings(app, { muted: isMuted() });
+  }
+  function closeSettings() {
+    if (settingsEl) {
+      settingsEl.remove();
+      settingsEl = null;
+    }
+  }
+  function openLeaveConfirm() {
+    if (leaveEl && leaveEl.isConnected) return;
+    // freeze pending auto-submits so the dialog can't have the rug pulled
+    if (pendingSubmitTimer) {
+      clearTimeout(pendingSubmitTimer);
+      pendingSubmitTimer = 0;
+    }
+    leaveEl = Screens.leaveConfirm(app);
+  }
+  function closeLeaveConfirm(resume) {
+    if (leaveEl) {
+      leaveEl.remove();
+      leaveEl = null;
+    }
+    if (resume && advanceDeferred) {
+      advanceDeferred = false;
+      proceedAfterResolve();
+    } else if (!resume) {
+      advanceDeferred = false;
+    }
+  }
+  function toggleMute() {
+    const m = !isMuted();
+    game.setMuted(m); // persists immediately per contract
+    AudioKit.setMuted(m);
+    // keep every visible mute control in step (settings card + screen headers)
+    for (const b of app.querySelectorAll('[data-mute-btn]')) b.textContent = Screens.muteLabel(m);
+    for (const b of app.querySelectorAll('[data-mute-icon]')) b.textContent = Screens.muteIcon(m);
+  }
+
+  // ---------------- land run ----------------
+  function startLand(id) {
+    const st = game.landStatus(id);
+    if (!st.unlocked) {
+      Juice.toast('Light up the path to open this land!');
+      return;
+    }
+    clearTimers();
+    landId = id;
+    bossHits = 0;
+    bossIntroShown = false;
+    originalsDone = 0;
+    run = game.startLand(id);
+    screen = 'challenge';
+    renderChallengeScreen();
+  }
+
+  function renderChallengeScreen() {
+    const cur = run ? run.current() : null;
+    if (!cur) { showMap(); return; }
+    closeLeaveConfirm(); // a re-render replaces app HTML; drop the stale handle
+    curView = cur;
+    slotsArr = [];
+    selection = [];
+    pendingEgg = null;
+    busy = false;
+    revealPending = false;
+    // Dot row renders from ORIGINAL challenge counts so requeued items never
+    // grow it. Prefer engine-provided fields; fall back to a local count.
+    if (cur.phase === 'challenge') {
+      if (typeof cur.originalsTotal !== 'number') cur.originalsTotal = 8;
+      if (typeof cur.originalsDone !== 'number') cur.originalsDone = originalsDone;
+    }
+    app.setAttribute('data-land', landId);
+    if (cur.phase === 'boss' && !bossIntroShown) {
+      bossIntroShown = true;
+      // two sentences need a longer hold than the default toast
+      try { Juice.toast(Copy.bossIntro(landId), 3500); } catch (e) { /* keep playing */ }
+    }
+    Screens.challenge(app, cur, { landId, landName: landName(landId), bossHits, muted: isMuted() });
+    Avatar.mount(app.querySelector('[data-avatar]'));
+  }
+
+  // ---------------- tiles paradigm ----------------
+  function tapTile(tile) {
+    if (!curView || curView.item.type !== 'tiles') return;
+    if (tile.classList.contains('tile-used')) return;
+    const word = curView.item.word;
+    if (slotsArr.length >= word.length) return;
+    const letter = tile.getAttribute('data-tile');
+    tile.classList.add('tile-used');
+    slotsArr.push({ letter, el: tile });
+    Screens.setSlot(app, slotsArr.length - 1, letter);
+    if (slotsArr.length === word.length) {
+      // unhurried pause: backspace stays available before auto-submit, and a
+      // pointerdown on backspace cancels this timer (wired in boot)
+      pendingSubmitTimer = setTimeout(() => {
+        pendingSubmitTimer = 0;
+        submitAnswer(slotsArr.map((s) => s.letter).join(''));
+      }, 1200);
+    }
+  }
+
+  function tilesBackspace() {
+    if (busy || !slotsArr.length) return;
+    if (pendingSubmitTimer) {
+      clearTimeout(pendingSubmitTimer);
+      pendingSubmitTimer = 0;
+    }
+    const last = slotsArr.pop();
+    Screens.setSlot(app, slotsArr.length, null);
+    if (last && last.el) last.el.classList.remove('tile-used');
+  }
+
+  function resetAttemptInputs() {
+    if (!curView) return;
+    if (curView.item.type === 'tiles') {
+      for (let i = 0; i < slotsArr.length; i++) Screens.setSlot(app, i, null);
+      for (const s of slotsArr) if (s.el) s.el.classList.remove('tile-used');
+      slotsArr = [];
+    } else {
+      for (const b of app.querySelectorAll('.choice.picked')) b.classList.remove('picked');
+      selection = [];
+    }
+  }
+
+  // ---------------- choices paradigm ----------------
+  function tapChoice(btn) {
+    if (!curView || curView.item.type !== 'choice') return;
+    const idx = parseInt(btn.getAttribute('data-choice'), 10);
+    const multi = Array.isArray(curView.item.answerIndices);
+    if (!multi) {
+      btn.classList.add('picked');
+      submitAnswer(idx);
+      return;
+    }
+    // Multi-select stays toggleable until the pending submit fires: removing a
+    // pick cancels it; it re-arms whenever exactly 2 picks are selected again.
+    const at = selection.indexOf(idx);
+    if (at > -1) {
+      if (pendingSubmitTimer) {
+        clearTimeout(pendingSubmitTimer);
+        pendingSubmitTimer = 0;
+      }
+      selection.splice(at, 1);
+      btn.classList.remove('picked');
+      return;
+    }
+    if (selection.length >= 2) return; // a third pick is ignored; any timer keeps running
+    selection.push(idx);
+    btn.classList.add('picked');
+    if (selection.length === 2) {
+      if (pendingSubmitTimer) {
+        clearTimeout(pendingSubmitTimer);
+        pendingSubmitTimer = 0;
+      }
+      pendingSubmitTimer = setTimeout(() => {
+        pendingSubmitTimer = 0;
+        if (selection.length === 2) submitAnswer(selection.slice());
+      }, 900);
+    }
+  }
+
+  // ---------------- outcome handling ----------------
+  function submitAnswer(answer) {
+    if (!run) return;
+    busy = true;
+    if (pendingSubmitTimer) {
+      clearTimeout(pendingSubmitTimer);
+      pendingSubmitTimer = 0;
+    }
+    const out = run.submit(answer);
+    handleOutcome(out);
+  }
+
+  function handleOutcome(out) {
+    let streakN = 1;
+    let levelup = false;
+    let bossHit = false;
+    let bossBlock = false;
+    pendingEgg = null;
+    for (const ev of out.events || []) {
+      if (ev.type === 'streak') streakN = ev.n;
+      else if (ev.type === 'levelup') levelup = true;
+      else if (ev.type === 'egg') pendingEgg = ev.companion;
+      else if (ev.type === 'bossHit') bossHit = true;
+      else if (ev.type === 'bossBlock') bossBlock = true;
+    }
+    // track resolved ORIGINAL challenges locally (dot-row fallback, see L2)
+    if (out.resolved && curView && curView.phase === 'challenge' && !curView.item.requeued) {
+      originalsDone += 1;
+    }
+    const card = app.querySelector('[data-card]');
+
+    if (out.status === 'correct') {
+      AudioKit.play('correct');
+      Screens.clearNotes(app);
+      Screens.showFeedback(app, out.feedback);
+      Avatar.trick(streakN);
+      trailUntil = performance.now() + 950;
+      if (reduced()) {
+        if (card) {
+          card.classList.add('soft-flash');
+          timer(750, () => card.classList.remove('soft-flash'));
+        }
+      } else {
+        const c = centerOf(card);
+        Particles.burst('shatter', c.x, c.y - 30);
+      }
+      if (bossHit) {
+        bossHits++;
+        Screens.crackShell(app, bossHits);
+        Screens.golemPlay(app, 'hit');
+        AudioKit.play('bossHit');
+        if (!reduced()) {
+          const g = centerOf(app.querySelector('[data-golem]'));
+          Particles.burst('shatter', g.x, g.y, { count: 20 });
+        }
+      }
+      if (levelup) {
+        timer(300, () => {
+          AudioKit.play('levelup');
+          try { Juice.toast(Copy.levelup(Math.random)); } catch (e) { /* toast only */ }
+          if (!reduced()) {
+            const c = centerOf(card);
+            Particles.burst('sparkle', c.x, c.y - 60, { count: 18 });
+          }
+        });
+      }
+      timer(1200, proceedAfterResolve);
+      return;
+    }
+
+    if (out.status === 'retry') {
+      // gentle shake -> hint card -> she tries again; never harsh
+      AudioKit.play('miss');
+      if (bossBlock) Screens.golemPlay(app, 'block');
+      if (card) Juice.shake(card);
+      Screens.showHint(app, out.feedback, out.hint || run.hint());
+      resetAttemptInputs();
+      busy = false;
+      return;
+    }
+
+    // 'reveal': friendly reveal with one-line explanation. She holds it for at
+    // least 2.8s, then any tap moves on; a ~7s auto-advance means she is never
+    // stuck (mirrors the celebration skip pattern).
+    AudioKit.play('pop');
+    if (bossBlock) Screens.golemPlay(app, 'block');
+    Screens.showReveal(app, out.feedback, out.explain);
+    if (curView.item.type === 'tiles') {
+      Screens.fillSlotsWith(app, String(out.correctAnswer || '').toUpperCase());
+    } else {
+      Screens.markChoiceAnswer(app, out.correctAnswer);
+    }
+    revealPending = true;
+    revealReadyTs = performance.now() + 2800;
+    timer(7000, () => {
+      if (revealPending) {
+        revealPending = false;
+        proceedAfterResolve();
+      }
+    });
+  }
+
+  function proceedAfterResolve() {
+    if (leaveEl && leaveEl.isConnected) {
+      // she's deciding whether to leave; hold the advance until she answers
+      advanceDeferred = true;
+      return;
+    }
+    if (pendingEgg) {
+      const comp = pendingEgg;
+      pendingEgg = null;
+      eggMoment(comp);
+      return;
+    }
+    advanceNow();
+  }
+
+  function advanceNow() {
+    clearTimers();
+    if (!run) { showMap(); return; }
+    const res = run.advance();
+    if (res && res.finished) {
+      showCelebration(res);
+    } else if (res) {
+      renderChallengeScreen();
+    } else {
+      showMap();
+    }
+  }
+
+  // ---------------- mid-run egg hatch ----------------
+  function eggMoment(companion) {
+    eggWrap = Screens.eggOverlay(app, companion);
+    timer(1100, () => {
+      AudioKit.play('hatch');
+      if (!reduced() && eggWrap) {
+        const c = centerOf(eggWrap.querySelector('.egg-card'));
+        Particles.burst('hatch', c.x, c.y);
+      }
+      if (eggWrap) Screens.eggHatch(eggWrap);
+    });
+  }
+  function resolveEgg() {
+    if (eggWrap) {
+      eggWrap.remove();
+      eggWrap = null;
+    }
+    advanceNow();
+  }
+
+  // ---------------- celebration (the signature beat) ----------------
+  function showCelebration(res) {
+    clearTimers();
+    run = null;
+    screen = 'celebrate';
+    const id = res.landId || landId;
+    app.setAttribute('data-land', id);
+    const comp = res.bossCompanion || null;
+    Screens.celebration(app, { landName: landName(id), stars: res.stars, companion: comp, muted: isMuted() });
+    celeStart = performance.now();
+    celeDone = false;
+
+    const stage = app.querySelector('[data-celebrate]');
+    const stars = Math.max(1, Math.min(3, res.stars | 0));
+    const noMotion = reduced();
+
+    AudioKit.play('fanfare');
+    if (!noMotion) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      timer(120, () => Particles.burst('confetti', w * 0.5, h * 0.3));
+      timer(520, () => Particles.burst('confetti', w * 0.22, h * 0.38, { count: 45 }));
+      timer(940, () => Particles.burst('confetti', w * 0.78, h * 0.38, { count: 45 }));
+    }
+
+    // star reveal, one by one
+    for (let i = 1; i <= stars; i++) {
+      timer(1400 + (i - 1) * 700, () => {
+        const star = stage.querySelector('[data-star="' + i + '"]');
+        if (star) {
+          star.classList.add('lit');
+          AudioKit.play('pop');
+          if (!noMotion) {
+            const c = centerOf(star);
+            Particles.burst('sparkle', c.x, c.y, { count: 14 });
+          }
+        }
+      });
+    }
+
+    let t = 1400 + stars * 700 + 250;
+    if (comp) {
+      const eggT = t;
+      timer(eggT, () => {
+        const egg = stage.querySelector('[data-egg]');
+        if (egg) egg.hidden = false;
+      });
+      timer(eggT + 1200, () => {
+        AudioKit.play('hatch');
+        const egg = stage.querySelector('[data-egg]');
+        if (egg) {
+          if (!noMotion) {
+            const c = centerOf(egg);
+            Particles.burst('hatch', c.x, c.y);
+          }
+          egg.hidden = true;
+        }
+        const cardEl = stage.querySelector('[data-companion]');
+        if (cardEl) cardEl.hidden = false;
+      });
+      t = eggT + 1900;
+    }
+    timer(2000, () => {
+      if (!celeDone) {
+        const note = stage.querySelector('[data-skip-note]');
+        if (note) note.hidden = false;
+      }
+    });
+    timer(t, finishCele);
+
+    celeFinal = () => {
+      for (let i = 1; i <= stars; i++) {
+        const star = stage.querySelector('[data-star="' + i + '"]');
+        if (star) star.classList.add('lit');
+      }
+      const egg = stage.querySelector('[data-egg]');
+      if (egg) egg.hidden = true;
+      const cardEl = stage.querySelector('[data-companion]');
+      if (cardEl) cardEl.hidden = false;
+      const note = stage.querySelector('[data-skip-note]');
+      if (note) note.hidden = true;
+      const cont = stage.querySelector('[data-action="continue"]');
+      if (cont) cont.hidden = false;
+    };
+  }
+
+  function finishCele() {
+    if (celeDone) return;
+    celeDone = true;
+    clearTimers();
+    if (celeFinal) celeFinal();
+  }
+
+  function onCeleTap() {
+    // skippable by tap after 2 seconds
+    if (!celeDone && performance.now() - celeStart > 2000) finishCele();
+  }
+
+  // ---------------- start ----------------
+  if (typeof document !== 'undefined') {
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', boot);
+    } else {
+      boot();
+    }
+  }
+
+  return { boot };
+})();
+
+})();
+</script>
+</body>
+</html>
